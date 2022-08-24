@@ -19,51 +19,63 @@ contract TraderJoe_WAVAX_ALPHAe is SetupBankAvax {
     ITraderJoeSpellV3 spell =
         ITraderJoeSpellV3(0x28F1BdBc52Ad1aAab71660f4B33179335054BE6A);
 
+    address tokenA = WAVAX;
+    address tokenB = USDC;
+
     function setUp() public override {
         super.setUp();
 
         vm.label(address(spell), "spell");
-    }
-
-    function testOpenPosition() public {
-        address token0 = WAVAX;
-        address token1 = USDC;
-        uint256 amount0 = 10000; // supply token0
-        uint256 amount1 = 10000; // supply token1
-        uint256 amount_lp = 0; // supply LP
-        uint256 amount0_borrow = 10000; // borrow token0
-        uint256 amount1_borrow = 10000; // borrow token1
-        uint256 amount_lp_borrow = 0; // borrow LP tokens (always 0 since LP for borrowing is disabled)
-        uint256 min_token0 = 0; // min token0
-        uint256 min_token1 = 0; // min token1
-        uint256 pid = 0;
 
         vm.startPrank(alice, alice);
 
         // approve tokens
-        IERC20(token0).safeApprove(address(bank), type(uint256).max);
-        IERC20(token1).safeApprove(address(bank), type(uint256).max);
+        IERC20(tokenA).safeApprove(address(bank), type(uint256).max);
+        IERC20(tokenB).safeApprove(address(bank), type(uint256).max);
 
         // mint tokens
-        deal(token0, alice, type(uint256).max);
-        deal(token1, alice, type(uint256).max);
+        deal(tokenA, alice, type(uint256).max);
+        deal(tokenB, alice, type(uint256).max);
 
-        bank.execute(
+        vm.stopPrank();
+    }
+
+    function testAll() public {
+        uint256 positionId = testOpenPosition();
+        testIncreasePosition(positionId);
+        testReducePosition(positionId);
+        testGetPendingRewards(positionId);
+        testHarvestRewards(positionId);
+    }
+
+    function testOpenPosition() public returns (uint256 positionId) {
+        uint256 amtAUser = 10000; // supply tokenA
+        uint256 amtBUser = 10000; // supply tokenB
+        uint256 amtLPUser = 0; // supply LP
+        uint256 amtABorrow = 10000; // borrow tokenA
+        uint256 amtBBorrow = 10000; // borrow tokenB
+        uint256 amtLPBorrow = 0; // borrow LP tokens (always 0 since LP for borrowing is disabled)
+        uint256 amtAMin = 0; // min tokenA
+        uint256 amtBMin = 0; // min tokenB
+        uint256 pid = 0;
+
+        vm.startPrank(alice, alice);
+        positionId = bank.execute(
             0, // (0 is reserved for opening new position)
             address(spell),
             abi.encodeWithSelector(
                 spell.addLiquidityWMasterChef.selector,
-                token0,
-                token1,
+                tokenA,
+                tokenB,
                 ITraderJoeSpellV3.Amounts(
-                    amount0,
-                    amount1,
-                    amount_lp,
-                    amount0_borrow,
-                    amount1_borrow,
-                    amount_lp_borrow,
-                    min_token0,
-                    min_token1
+                    amtAUser,
+                    amtBUser,
+                    amtLPUser,
+                    amtABorrow,
+                    amtBBorrow,
+                    amtLPBorrow,
+                    amtAMin,
+                    amtBMin
                 ),
                 pid
             )
@@ -71,46 +83,122 @@ contract TraderJoe_WAVAX_ALPHAe is SetupBankAvax {
         vm.stopPrank();
     }
 
-    function testIncreasePosition() public {}
+    function testIncreasePosition(uint256 positionId) public {
+        uint256 amtAUser = 10000; // supply tokenA
+        uint256 amtBUser = 10000; // supply tokenB
+        uint256 amtLPUser = 0; // supply LP
+        uint256 amtABorrow = 10000; // borrow tokenA
+        uint256 amtBBorrow = 10000; // borrow tokenB
+        uint256 amtLPBorrow = 0; // borrow LP tokens (always 0 since LP for borrowing is disabled)
+        uint256 amtAMin = 0; // min tokenA
+        uint256 amtBMin = 0; // min tokenB
+        uint256 pid = 0;
 
-    function testReducePosition() public {}
+        vm.startPrank(alice, alice);
+        positionId = bank.execute(
+            positionId, // (use current positionId)
+            address(spell),
+            abi.encodeWithSelector(
+                spell.addLiquidityWMasterChef.selector,
+                tokenA,
+                tokenB,
+                ITraderJoeSpellV3.Amounts(
+                    amtAUser,
+                    amtBUser,
+                    amtLPUser,
+                    amtABorrow,
+                    amtBBorrow,
+                    amtLPBorrow,
+                    amtAMin,
+                    amtBMin
+                ),
+                pid
+            )
+        );
+        vm.stopPrank();
+    }
 
-    function testHarvestRewards() public {}
+    function testReducePosition(uint256 positionId) public {
+        (
+            ,
+            address collateralTokenAddress,
+            uint256 collateralId,
+            uint256 collateralAmount
+        ) = bank.getPositionInfo(positionId);
 
-    function testGetPendingRewards() public {
-        vm.warp(block.timestamp + 100000);
+        uint256 amtLPTake = collateralAmount; // Take out LP token amount (from Homora)
+        uint256 amtLPWithdraw = 100; // Withdraw LP token amount (back to user)
+        uint256 amtARepay = type(uint256).max; // Repay tokenA amount (repay all -> type(uint).max)
+        uint256 amtBRepay = type(uint256).max; // Repay tokenB amount (repay all -> type(uint).max)
+        uint256 amtLPRepay = 0; // Repay LP token amount
+        uint256 amtAMin = 0; // Desired tokenA amount
+        uint256 amtBMin = 0; // Desired tokenB amount
 
-        uint256 positionId = bank.nextPositionId() - 1;
+        vm.startPrank(alice, alice);
+        positionId = bank.execute(
+            positionId, // (use current positionId)
+            address(spell),
+            abi.encodeWithSelector(
+                spell.removeLiquidityWMasterChef.selector,
+                tokenA,
+                tokenB,
+                ITraderJoeSpellV3.RepayAmounts(
+                    collateralAmount,
+                    amtLPWithdraw,
+                    amtARepay,
+                    amtBRepay,
+                    amtLPRepay,
+                    amtAMin,
+                    amtBMin
+                )
+            )
+        );
+        vm.stopPrank();
+    }
 
-        (, address coll_token_addr, uint256 coll_id, uint256 coll_amt) = bank
-            .getPositionInfo(positionId);
+    function testHarvestRewards(uint256 positionId) public {
+        vm.startPrank(alice, alice);
+        bank.execute(
+            positionId,
+            address(spell),
+            abi.encodeWithSelector(spell.harvestWMasterChef.selector)
+        );
+        vm.stopPrank();
+    }
+
+    function testGetPendingRewards(uint256 positionId) public {
+        vm.warp(block.timestamp + 10000);
+
+        (
+            ,
+            address collateralTokenAddress,
+            uint256 collateralId,
+            uint256 collateralAmount
+        ) = bank.getPositionInfo(positionId);
 
         IWBoostedMasterChefJoeWorker wrapper = IWBoostedMasterChefJoeWorker(
-            coll_token_addr
+            collateralTokenAddress
         );
         IBoostedMasterChefJoe chef = IBoostedMasterChefJoe(wrapper.chef());
 
-        (uint256 pid, uint256 start_token_per_share) = wrapper.decodeId(
-            coll_id
+        (uint256 pid, uint256 startTokenPerShare) = wrapper.decodeId(
+            collateralId
         );
-
-        uint256 end_token_per_share = wrapper.accJoePerShare();
+        uint256 endTokenPerShare = wrapper.accJoePerShare();
         IBoostedMasterChefJoe.UserInfo memory userInfo = chef.userInfo(
             pid,
             address(wrapper)
         );
         (uint256 pendingJoe, , , ) = chef.pendingTokens(pid, address(wrapper));
-        uint256 decimals = IERC20Metadata(address(wrapper.joe())).decimals();
 
         uint256 pendingJoePerShareFromChef = (pendingJoe * 10**18) /
             userInfo.amount;
-        uint256 pending_rewards = (coll_amt *
-            (end_token_per_share -
-                start_token_per_share +
-                pendingJoePerShareFromChef)) /
-            10**18 /
-            decimals;
-        console2.log(pending_rewards);
+        uint256 increasingJoePerShare = endTokenPerShare -
+            startTokenPerShare +
+            pendingJoePerShareFromChef;
+        uint256 pendingRewards = (collateralAmount * increasingJoePerShare) /
+            10**18;
+        console2.log("pendingRewards:", pendingRewards);
     }
 
     function testReinvest() public {}
