@@ -53,6 +53,12 @@ interface IBankAVAX {
         view
         returns (uint256);
 
+    /// @dev Return the list of all debts for the given position id.
+    function getPositionDebts(uint256 positionId)
+        external
+        view
+        returns (address[] memory tokens, uint256[] memory debts);
+
     /// @dev Return the borrow balance for given positon and token without trigger interest accrual.
     function borrowBalanceStored(uint256 positionId, address token)
         external
