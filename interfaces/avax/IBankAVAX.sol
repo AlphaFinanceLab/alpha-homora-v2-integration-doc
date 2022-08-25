@@ -140,4 +140,21 @@ interface IBankAVAX {
     function addBank(address token, address cToken) external;
 
     function whitelistedTokens(address token) external view returns (bool);
+
+    function setWhitelistContractWithTxOrigin(
+        address[] calldata _contracts,
+        address[] calldata _origins,
+        bool[] calldata _statuses
+    ) external;
+
+    function whitelistedContractWithTxOrigin(address, address)
+        external
+        view
+        returns (bool);
+
+    function setAllowContractCalls(bool ok) external;
+
+    function governor() external returns (address);
+
+    function exec() external returns (address);
 }
