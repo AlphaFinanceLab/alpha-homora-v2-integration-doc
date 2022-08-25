@@ -6,14 +6,15 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.s
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import "../../SetupBankAvax.sol";
+import "../../contracts/avax/SetupBankAvax.sol";
+import "../../contracts/avax/pool/traderjoe/TraderJoeV3Integration.sol";
 import "../../../../interfaces/avax/ITraderJoeSpellV3.sol";
 import "../../../../interfaces/avax/IBoostedMasterChefJoe.sol";
 import "../../../../interfaces/avax/IWBoostedMasterChefJoeWorker.sol";
 
 import "forge-std/console2.sol";
 
-contract TraderJoe_WAVAX_ALPHAe is SetupBankAvax {
+contract TraderJoeSpellV3Test is TraderJoeV3Integration {
     using SafeERC20 for IERC20;
 
     ITraderJoeSpellV3 spell =
@@ -27,6 +28,14 @@ contract TraderJoe_WAVAX_ALPHAe is SetupBankAvax {
 
         vm.label(address(spell), "spell");
 
+        // prepare fund
+        prepareFund();
+
+        // whitelist contract
+        setWhitelistContract();
+    }
+
+    function prepareFund() internal {
         vm.startPrank(alice, alice);
 
         // approve tokens
@@ -38,6 +47,23 @@ contract TraderJoe_WAVAX_ALPHAe is SetupBankAvax {
         deal(tokenB, alice, type(uint256).max);
 
         vm.stopPrank();
+    }
+
+    function setWhitelistContract() internal {
+        // set whitelist contract call
+        address[] memory _contracts = new address[](1);
+        address[] memory _origins = new address[](1);
+        bool[] memory _statuses = new bool[](1);
+
+        _contracts[0] = address(this);
+        _origins[0] = alice;
+        _statuses[0] = true;
+
+        vm.prank(bank.governor());
+        bank.setWhitelistContractWithTxOrigin(_contracts, _origins, _statuses);
+
+        vm.prank(bank.exec());
+        bank.setAllowContractCalls(true);
     }
 
     function testAll() public {
@@ -59,24 +85,20 @@ contract TraderJoe_WAVAX_ALPHAe is SetupBankAvax {
         uint256 amtBMin = 0; // min tokenB
         uint256 pid = 0;
 
-        vm.startPrank(alice, alice);
-        positionId = bank.execute(
-            0, // (0 is reserved for opening new position)
+        vm.startPrank(alice);
+        positionId = openPosition(
             address(spell),
-            abi.encodeWithSelector(
-                spell.addLiquidityWMasterChef.selector,
+            TraderJoeV3Integration.AddLiquidityParams(
                 tokenA,
                 tokenB,
-                ITraderJoeSpellV3.Amounts(
-                    amtAUser,
-                    amtBUser,
-                    amtLPUser,
-                    amtABorrow,
-                    amtBBorrow,
-                    amtLPBorrow,
-                    amtAMin,
-                    amtBMin
-                ),
+                amtAUser,
+                amtBUser,
+                amtLPUser,
+                amtABorrow,
+                amtBBorrow,
+                amtLPBorrow,
+                amtAMin,
+                amtBMin,
                 pid
             )
         );
@@ -95,23 +117,20 @@ contract TraderJoe_WAVAX_ALPHAe is SetupBankAvax {
         uint256 pid = 0;
 
         vm.startPrank(alice, alice);
-        positionId = bank.execute(
-            positionId, // (use current positionId)
+        increasePosition(
             address(spell),
-            abi.encodeWithSelector(
-                spell.addLiquidityWMasterChef.selector,
+            positionId,
+            AddLiquidityParams(
                 tokenA,
                 tokenB,
-                ITraderJoeSpellV3.Amounts(
-                    amtAUser,
-                    amtBUser,
-                    amtLPUser,
-                    amtABorrow,
-                    amtBBorrow,
-                    amtLPBorrow,
-                    amtAMin,
-                    amtBMin
-                ),
+                amtAUser,
+                amtBUser,
+                amtLPUser,
+                amtABorrow,
+                amtBBorrow,
+                amtLPBorrow,
+                amtAMin,
+                amtBMin,
                 pid
             )
         );
@@ -135,22 +154,19 @@ contract TraderJoe_WAVAX_ALPHAe is SetupBankAvax {
         uint256 amtBMin = 0; // Desired tokenB amount
 
         vm.startPrank(alice, alice);
-        positionId = bank.execute(
-            positionId, // (use current positionId)
+        reducePosition(
             address(spell),
-            abi.encodeWithSelector(
-                spell.removeLiquidityWMasterChef.selector,
+            positionId,
+            RemoveLiquidityParams(
                 tokenA,
                 tokenB,
-                ITraderJoeSpellV3.RepayAmounts(
-                    collateralAmount,
-                    amtLPWithdraw,
-                    amtARepay,
-                    amtBRepay,
-                    amtLPRepay,
-                    amtAMin,
-                    amtBMin
-                )
+                amtLPTake,
+                amtLPWithdraw,
+                amtARepay,
+                amtBRepay,
+                amtLPRepay,
+                amtAMin,
+                amtBMin
             )
         );
         vm.stopPrank();
@@ -158,46 +174,13 @@ contract TraderJoe_WAVAX_ALPHAe is SetupBankAvax {
 
     function testHarvestRewards(uint256 positionId) public {
         vm.startPrank(alice, alice);
-        bank.execute(
-            positionId,
-            address(spell),
-            abi.encodeWithSelector(spell.harvestWMasterChef.selector)
-        );
+        harvestRewards(address(spell), positionId);
         vm.stopPrank();
     }
 
     function testGetPendingRewards(uint256 positionId) public {
         vm.warp(block.timestamp + 10000);
-
-        (
-            ,
-            address collateralTokenAddress,
-            uint256 collateralId,
-            uint256 collateralAmount
-        ) = bank.getPositionInfo(positionId);
-
-        IWBoostedMasterChefJoeWorker wrapper = IWBoostedMasterChefJoeWorker(
-            collateralTokenAddress
-        );
-        IBoostedMasterChefJoe chef = IBoostedMasterChefJoe(wrapper.chef());
-
-        (uint256 pid, uint256 startTokenPerShare) = wrapper.decodeId(
-            collateralId
-        );
-        uint256 endTokenPerShare = wrapper.accJoePerShare();
-        IBoostedMasterChefJoe.UserInfo memory userInfo = chef.userInfo(
-            pid,
-            address(wrapper)
-        );
-        (uint256 pendingJoe, , , ) = chef.pendingTokens(pid, address(wrapper));
-
-        uint256 pendingJoePerShareFromChef = (pendingJoe * 10**18) /
-            userInfo.amount;
-        uint256 increasingJoePerShare = endTokenPerShare -
-            startTokenPerShare +
-            pendingJoePerShareFromChef;
-        uint256 pendingRewards = (collateralAmount * increasingJoePerShare) /
-            10**18;
+        uint256 pendingRewards = getPendingRewards(positionId);
         console2.log("pendingRewards:", pendingRewards);
     }
 

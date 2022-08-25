@@ -2,10 +2,14 @@
 
 pragma solidity 0.8.16;
 
+import "../../interfaces/avax/IBankAVAX.sol";
+
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 contract Utils is Test {
+    IBankAVAX bank = IBankAVAX(0x376d16C7dE138B01455a51dA79AD65806E9cd694);
+
     address WAVAX = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
     address ALPHAe = 0x2147EFFF675e4A4eE1C2f918d181cDBd7a8E208f;
     address USDC = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;

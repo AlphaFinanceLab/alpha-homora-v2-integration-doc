@@ -13,12 +13,11 @@ import "forge-std/Test.sol";
 contract SetupBankAvax is Test, Utils {
     using SafeERC20 for IERC20;
 
-    IBankAVAX bank = IBankAVAX(0x376d16C7dE138B01455a51dA79AD65806E9cd694);
-
     function setUp() public virtual override {
         super.setUp();
 
         vm.label(address(bank), "bank");
+
         // setup credit limit
     }
 }
