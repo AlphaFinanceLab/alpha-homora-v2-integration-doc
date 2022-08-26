@@ -15,9 +15,9 @@ interface IWBoostedMasterChefJoeWorker is IERC1155, IERC20Wrapper {
     /// @dev Burn ERC1155 token to redeem ERC20 token back.
     function burn(uint256 id, uint256 amount) external returns (uint256 pid);
 
-    function joe() external returns (IERC20);
+    function joe() external view returns (IERC20);
 
-    function accJoePerShare() external returns (uint256);
+    function accJoePerShare() external view returns (uint256);
 
     function decodeId(uint256 id) external pure returns (uint256, uint256);
 

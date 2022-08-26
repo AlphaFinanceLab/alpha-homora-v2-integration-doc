@@ -7,14 +7,14 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/Sa
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 import "../../contracts/avax/SetupBankAvax.sol";
-import "../../contracts/avax/pool/traderjoe/TraderJoeV3Integration.sol";
+import "../../contracts/avax/pool/traderjoe/TraderJoeSpellV3Integration.sol";
 import "../../../../interfaces/avax/ITraderJoeSpellV3.sol";
 import "../../../../interfaces/avax/IBoostedMasterChefJoe.sol";
 import "../../../../interfaces/avax/IWBoostedMasterChefJoeWorker.sol";
 
 import "forge-std/console2.sol";
 
-contract TraderJoeSpellV3Test is TraderJoeV3Integration {
+contract TraderJoeSpellV3Test is TraderJoeSpellV3Integration {
     using SafeERC20 for IERC20;
 
     ITraderJoeSpellV3 spell =
@@ -88,7 +88,7 @@ contract TraderJoeSpellV3Test is TraderJoeV3Integration {
         vm.startPrank(alice);
         positionId = openPosition(
             address(spell),
-            TraderJoeV3Integration.AddLiquidityParams(
+            TraderJoeSpellV3Integration.AddLiquidityParams(
                 tokenA,
                 tokenB,
                 amtAUser,
@@ -118,8 +118,8 @@ contract TraderJoeSpellV3Test is TraderJoeV3Integration {
 
         vm.startPrank(alice, alice);
         increasePosition(
-            address(spell),
             positionId,
+            address(spell),
             AddLiquidityParams(
                 tokenA,
                 tokenB,
@@ -183,6 +183,4 @@ contract TraderJoeSpellV3Test is TraderJoeV3Integration {
         uint256 pendingRewards = getPendingRewards(positionId);
         console2.log("pendingRewards:", pendingRewards);
     }
-
-    function testReinvest() public {}
 }

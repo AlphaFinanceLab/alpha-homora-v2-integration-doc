@@ -14,11 +14,16 @@ import "../../../../interfaces/avax/IWBoostedMasterChefJoeWorker.sol";
 
 import "forge-std/console2.sol";
 
-contract TraderJoeV3Integration is SetupBankAvax {
+contract TraderJoeSpellV3Integration is SetupBankAvax {
     using SafeERC20 for IERC20;
 
+    // addLiquidityWMasterChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint256)
     bytes4 addLiquiditySelector = 0xe07d904e;
+
+    // removeLiquidityWMasterChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256))
     bytes4 removeLiquiditySelector = 0x95723b1c;
+
+    // harvestWMasterChef()
     bytes4 harvestRewardsSelector = 0x40a65ad2;
 
     struct AddLiquidityParams {
@@ -38,8 +43,8 @@ contract TraderJoeV3Integration is SetupBankAvax {
     struct RemoveLiquidityParams {
         address tokenA;
         address tokenB;
-        uint256 amtLPTake; // Take out LP token amount (from Homora)
-        uint256 amtLPWithdraw; // Withdraw LP token amount (back to caller)
+        uint256 amtLPTake; // Amount of LP being removed from the position
+        uint256 amtLPWithdraw; // Amount of LP being received from removing the position (remaining will be converted to tokenA, tokenB)
         uint256 amtARepay; // Repay tokenA amount
         uint256 amtBRepay; // Repay tokenB amount
         uint256 amtLPRepay; // Repay LP token amount
@@ -74,12 +79,12 @@ contract TraderJoeV3Integration is SetupBankAvax {
     }
 
     function increasePosition(
-        address spell,
         uint256 positionId,
+        address spell,
         AddLiquidityParams memory params
     ) public {
-        positionId = bank.execute(
-            positionId, // (use current positionId)
+        bank.execute(
+            positionId,
             spell,
             abi.encodeWithSelector(
                 addLiquiditySelector,
@@ -135,6 +140,7 @@ contract TraderJoeV3Integration is SetupBankAvax {
 
     function getPendingRewards(uint256 positionId)
         public
+        view
         returns (uint256 pendingRewards)
     {
         (
@@ -172,6 +178,4 @@ contract TraderJoeV3Integration is SetupBankAvax {
 
         pendingRewards = (collateralAmount * increasingJoePerShare) / 10**18;
     }
-
-    function reinvest() public {}
 }

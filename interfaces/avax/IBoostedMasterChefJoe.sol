@@ -37,7 +37,7 @@ interface IBoostedMasterChefJoe {
     function poolInfo(uint256 pid) external view returns (PoolInfo memory);
 
     /// @notice Info of each user that stakes LP tokens
-    function userInfo(uint256, address) external returns (UserInfo memory);
+    function userInfo(uint256, address) external view returns (UserInfo memory);
 
     /// @dev Total allocation points. Must be the sum of all allocation points in all pools
     function totalAllocPoint() external view returns (uint256);
