@@ -9,7 +9,7 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensio
 import "./BaseTest.sol";
 import "./Utils.sol";
 import "../../contracts/avax/pool/traderjoe/TraderJoeSpellV3Integration.sol";
-import "../../../../interfaces/avax/traderjoe/IUniswapV2Factory.sol";
+import "../../../../interfaces/avax/traderjoe/ITraderJoeFactory.sol";
 import "../../../../interfaces/avax/traderjoe/ITraderJoeSpellV3.sol";
 import "../../../../interfaces/avax/traderjoe/IBoostedMasterChefJoe.sol";
 import "../../../../interfaces/avax/traderjoe/IWBoostedMasterChefJoeWorker.sol";
@@ -22,8 +22,8 @@ contract TraderJoeSpellV3Test is BaseTest, Utils {
     // TODO: change spell address you want
     ITraderJoeSpellV3 spell =
         ITraderJoeSpellV3(0x28F1BdBc52Ad1aAab71660f4B33179335054BE6A); // spell to interact with
-    IUniswapV2Factory factory =
-        IUniswapV2Factory(0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10); // trader joe factory
+    ITraderJoeFactory factory =
+        ITraderJoeFactory(0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10); // trader joe factory
 
     // TODO: change tokenA you want
     address tokenA = WAVAX; // The first token of pool

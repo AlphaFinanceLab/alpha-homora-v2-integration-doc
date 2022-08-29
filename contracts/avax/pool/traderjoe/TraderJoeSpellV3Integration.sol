@@ -11,7 +11,7 @@ import "../../../../interfaces/avax/IBankAVAX.sol";
 import "../../../../interfaces/avax/traderjoe/ITraderJoeSpellV3.sol";
 import "../../../../interfaces/avax/traderjoe/IBoostedMasterChefJoe.sol";
 import "../../../../interfaces/avax/traderjoe/IWBoostedMasterChefJoeWorker.sol";
-import "../../../../interfaces/avax/traderjoe/IUniswapV2Factory.sol";
+import "../../../../interfaces/avax/traderjoe/ITraderJoeFactory.sol";
 
 import "forge-std/console2.sol";
 
@@ -19,7 +19,7 @@ contract TraderJoeSpellV3Integration is BaseIntegration {
     using SafeERC20 for IERC20;
 
     IBankAVAX bank; // homora bank
-    IUniswapV2Factory factory; // traderjoe factory
+    ITraderJoeFactory factory; // traderjoe factory
 
     // addLiquidityWMasterChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint256)
     bytes4 addLiquiditySelector = 0xe07d904e;
@@ -56,7 +56,7 @@ contract TraderJoeSpellV3Integration is BaseIntegration {
         uint256 amtBMin; // Desired tokenB amount
     }
 
-    constructor(IBankAVAX _bank, IUniswapV2Factory _factory) public {
+    constructor(IBankAVAX _bank, ITraderJoeFactory _factory) public {
         bank = _bank;
         factory = _factory;
     }
