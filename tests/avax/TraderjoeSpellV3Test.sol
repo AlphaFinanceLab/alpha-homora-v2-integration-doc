@@ -22,6 +22,7 @@ contract TraderJoeSpellV3Test is TraderJoeSpellV3Integration {
 
     address tokenA = WAVAX; // The first token of pool
     address tokenB = USDC; // The second token of pool
+    uint256 pid = 0; // Pool id of BoostedMasterChefJoe
 
     function setUp() public override {
         super.setUp();
@@ -86,7 +87,6 @@ contract TraderJoeSpellV3Test is TraderJoeSpellV3Integration {
         uint256 amtLPBorrow = 0;
         uint256 amtAMin = 0;
         uint256 amtBMin = 0;
-        uint256 pid = 0;
 
         // assume that user wants to open position by calling to integration contract
         // so integration contract will forward a request to HomoraBank further
@@ -119,7 +119,6 @@ contract TraderJoeSpellV3Test is TraderJoeSpellV3Integration {
         uint256 amtLPBorrow = 0;
         uint256 amtAMin = 0;
         uint256 amtBMin = 0;
-        uint256 pid = 0;
 
         vm.startPrank(alice);
         increasePosition(
