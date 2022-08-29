@@ -18,6 +18,7 @@ import "forge-std/console2.sol";
 contract PangolinSpellV2Integration is BaseIntegration {
     using SafeERC20 for IERC20;
 
+    IBankAVAX bank; // homora bank
     IPangolinFactory factory; // pangolin factory
 
     // addLiquidityWMiniChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint256)
@@ -55,7 +56,8 @@ contract PangolinSpellV2Integration is BaseIntegration {
         uint256 amtBMin; // Desired tokenB amount
     }
 
-    constructor(IPangolinFactory _factory) public {
+    constructor(IBankAVAX _bank, IPangolinFactory _factory) public {
+        bank = _bank;
         factory = _factory;
     }
 

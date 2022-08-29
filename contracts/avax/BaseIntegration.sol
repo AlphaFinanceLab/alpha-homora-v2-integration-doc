@@ -4,14 +4,11 @@ pragma solidity 0.8.16;
 
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 import "../../interfaces/avax/IBankAVAX.sol";
 
 contract BaseIntegration {
     using SafeERC20 for IERC20;
-
-    IBankAVAX bank = IBankAVAX(0x376d16C7dE138B01455a51dA79AD65806E9cd694);
 
     mapping(address => mapping(address => bool)) public approved; // Mapping from token to (mapping from spender to approve status)
 

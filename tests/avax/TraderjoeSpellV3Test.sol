@@ -6,7 +6,8 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.s
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import "../../contracts/avax/SetupBankAvax.sol";
+import "./BaseTest.sol";
+import "./Utils.sol";
 import "../../contracts/avax/pool/traderjoe/TraderJoeSpellV3Integration.sol";
 import "../../../../interfaces/avax/traderjoe/IUniswapV2Factory.sol";
 import "../../../../interfaces/avax/traderjoe/ITraderJoeSpellV3.sol";
@@ -15,7 +16,7 @@ import "../../../../interfaces/avax/traderjoe/IWBoostedMasterChefJoeWorker.sol";
 
 import "forge-std/console2.sol";
 
-contract TraderJoeSpellV3Test is Test, Utils {
+contract TraderJoeSpellV3Test is BaseTest, Utils {
     using SafeERC20 for IERC20;
 
     // TODO: change spell address you want
@@ -40,50 +41,31 @@ contract TraderJoeSpellV3Test is Test, Utils {
         vm.label(address(spell), "spell");
 
         // deploy integration contract
-        integration = new TraderJoeSpellV3Integration(factory);
+        integration = new TraderJoeSpellV3Integration(bank, factory);
         lp = factory.getPair(tokenA, tokenB);
 
         // prepare fund for user
-        prepareFund();
+        prepareFund(alice, tokenA, tokenB, lp, address(integration));
 
-        // set whitelist that this contract can call HomoraBank, otherwise tx will fail
+        // set whitelist that integration contract can call HomoraBank, otherwise tx will fail
         // NOTE: set whitelist contract must be executed from ALPHA governor
-        setWhitelistContract();
-    }
+        setWhitelistContract(bank, alice, address(integration));
 
-    function prepareFund() internal {
-        vm.startPrank(alice, alice);
-
-        // approve tokens
-        IERC20(tokenA).safeApprove(address(integration), type(uint256).max);
-        IERC20(tokenB).safeApprove(address(integration), type(uint256).max);
-        IERC20(lp).safeApprove(address(integration), type(uint256).max);
-
-        // mint tokens
-        deal(tokenA, alice, 1_000 * 10**IERC20Metadata(tokenA).decimals());
-        deal(tokenB, alice, 1_000 * 10**IERC20Metadata(tokenB).decimals());
-        deal(lp, alice, 1000);
-
-        vm.stopPrank();
-    }
-
-    function setWhitelistContract() internal {
-        // set whitelist contract call
-        address[] memory _contracts = new address[](1);
-        address[] memory _origins = new address[](1);
-        bool[] memory _statuses = new bool[](1);
-
-        _contracts[0] = address(this);
-        _origins[0] = alice;
-        _statuses[0] = true;
-
-        // NOTE: only ALPHA governor can set whitelist contract call
-        vm.prank(bank.governor());
-        bank.setWhitelistContractWithTxOrigin(_contracts, _origins, _statuses);
-
-        // NOTE: only ALPHA executive can set allow contract call
-        vm.prank(bank.exec());
-        bank.setAllowContractCalls(true);
+        // set credit limit that integration contract can be borrow with uncollateralized loan
+        setCreditLimit(
+            bank,
+            address(integration),
+            tokenA,
+            type(uint256).max,
+            alice
+        );
+        setCreditLimit(
+            bank,
+            address(integration),
+            tokenB,
+            type(uint256).max,
+            alice
+        );
     }
 
     function testAll() public {
@@ -216,7 +198,7 @@ contract TraderJoeSpellV3Test is Test, Utils {
         ) = bank.getPositionInfo(positionId);
 
         uint256 amtLPTake = collateralAmount; // withdraw 100% of position
-        uint256 amtLPWithdraw = 0; // return only 100 LP to user
+        uint256 amtLPWithdraw = 100; // return only 100 LP to user
         uint256 amtARepay = type(uint256).max; // repay 100% of tokenA
         uint256 amtBRepay = type(uint256).max; // repay 100% of tokenB
         uint256 amtLPRepay = 0; // (always 0 since LP borrow is disallowed)

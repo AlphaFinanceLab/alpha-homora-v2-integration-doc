@@ -10,7 +10,7 @@ import "../../contracts/avax/BaseIntegration.sol";
 
 import "forge-std/Test.sol";
 
-contract TestHelper is Test {
+contract BaseTest is Test {
     using SafeERC20 for IERC20;
 
     function prepareFund(

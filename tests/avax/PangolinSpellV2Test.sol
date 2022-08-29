@@ -6,8 +6,8 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.s
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import "./TestHelper.sol";
-import "../../contracts/avax/Utils.sol";
+import "./BaseTest.sol";
+import "./Utils.sol";
 import "../../contracts/avax/pool/pangolin/PangolinSpellV2Integration.sol";
 import "../../../../interfaces/avax/pangolin/IMiniChefV2PNG.sol";
 import "../../../../interfaces/avax/pangolin/IWMiniChefV2PNG.sol";
@@ -16,7 +16,7 @@ import "../../../../interfaces/avax/pangolin/IPangolinFactory.sol";
 
 import "forge-std/console2.sol";
 
-contract PangolinSpellV2Test is TestHelper, Utils {
+contract PangolinSpellV2Test is BaseTest, Utils {
     using SafeERC20 for IERC20;
 
     // TODO: change spell address you want
@@ -43,7 +43,7 @@ contract PangolinSpellV2Test is TestHelper, Utils {
         vm.label(0xa67CF61b0b9BC39c6df04095A118e53BFb9303c7, "wMinichefPNG");
 
         // deploy integration contract
-        integration = new PangolinSpellV2Integration(factory);
+        integration = new PangolinSpellV2Integration(bank, factory);
         lp = factory.getPair(tokenA, tokenB);
 
         // prepare fund for user
@@ -73,9 +73,9 @@ contract PangolinSpellV2Test is TestHelper, Utils {
     function testAll() public {
         uint256 positionId = testOpenPosition();
         testIncreasePosition(positionId);
-        testReducePosition(positionId);
         // testGetPendingRewards(positionId);
-        // testHarvestRewards(positionId);
+        testHarvestRewards(positionId);
+        testReducePosition(positionId);
     }
 
     function testOpenPosition() public returns (uint256 positionId) {
@@ -200,7 +200,7 @@ contract PangolinSpellV2Test is TestHelper, Utils {
         ) = bank.getPositionInfo(positionId);
 
         uint256 amtLPTake = collateralAmount; // withdraw 100% of position
-        uint256 amtLPWithdraw = 0; // return only 100 LP to user
+        uint256 amtLPWithdraw = 100; // return only 100 LP to user
         uint256 amtARepay = type(uint256).max; // repay 100% of tokenA
         uint256 amtBRepay = type(uint256).max; // repay 100% of tokenB
         uint256 amtLPRepay = 0; // (always 0 since LP borrow is disallowed)
