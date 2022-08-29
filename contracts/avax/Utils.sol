@@ -10,9 +10,12 @@ import "forge-std/console.sol";
 contract Utils is Test {
     IBankAVAX bank = IBankAVAX(0x376d16C7dE138B01455a51dA79AD65806E9cd694);
 
-    address WAVAX = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
     address ALPHAe = 0x2147EFFF675e4A4eE1C2f918d181cDBd7a8E208f;
+    address DAIe = 0xd586E7F844cEa2F87f50152665BCbc2C279D8d70;
     address USDC = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
+    address USDCe = 0xc7198437980c041c805A1EDcbA50c1Ce5db95118;
+    address WAVAX = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
+    address WBTCe = 0x50b7545627a5162F82A992c33b87aDc75187B218;
 
     uint256 constant alicePk = 0xa11ce;
     uint256 constant liquidatorPk = 0x110;
