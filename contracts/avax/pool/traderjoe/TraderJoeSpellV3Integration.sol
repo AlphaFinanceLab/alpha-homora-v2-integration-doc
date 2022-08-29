@@ -8,14 +8,19 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensio
 
 import "../../SetupBankAvax.sol";
 import "../../../../interfaces/avax/IBankAVAX.sol";
-import "../../../../interfaces/avax/ITraderJoeSpellV3.sol";
-import "../../../../interfaces/avax/IBoostedMasterChefJoe.sol";
-import "../../../../interfaces/avax/IWBoostedMasterChefJoeWorker.sol";
+import "../../../../interfaces/avax/traderjoe/ITraderJoeSpellV3.sol";
+import "../../../../interfaces/avax/traderjoe/IBoostedMasterChefJoe.sol";
+import "../../../../interfaces/avax/traderjoe/IWBoostedMasterChefJoeWorker.sol";
+import "../../../../interfaces/avax/traderjoe/IUniswapV2Factory.sol";
 
 import "forge-std/console2.sol";
 
 contract TraderJoeSpellV3Integration is SetupBankAvax {
     using SafeERC20 for IERC20;
+
+    IUniswapV2Factory factory; // traderjoe factory
+
+    mapping(address => mapping(address => bool)) public approved; // Mapping from token to (mapping from spender to approve status)
 
     // addLiquidityWMasterChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint256)
     bytes4 addLiquiditySelector = 0xe07d904e;
@@ -52,10 +57,38 @@ contract TraderJoeSpellV3Integration is SetupBankAvax {
         uint256 amtBMin; // Desired tokenB amount
     }
 
+    constructor(IUniswapV2Factory _factory) public {
+        factory = _factory;
+    }
+
     function openPosition(address spell, AddLiquidityParams memory params)
-        internal
+        external
         returns (uint256 positionId)
     {
+        address lp = factory.getPair(params.tokenA, params.tokenB);
+
+        // approve tokens
+        ensureApprove(params.tokenA, address(bank));
+        ensureApprove(params.tokenB, address(bank));
+        ensureApprove(lp, address(bank));
+
+        // transfer tokens from user
+        IERC20(params.tokenA).safeTransferFrom(
+            msg.sender,
+            address(this),
+            params.amtAUser
+        );
+        IERC20(params.tokenB).safeTransferFrom(
+            msg.sender,
+            address(this),
+            params.amtBUser
+        );
+        IERC20(lp).safeTransferFrom(
+            msg.sender,
+            address(this),
+            params.amtLPUser
+        );
+
         positionId = bank.execute(
             0, // (0 is reserved for opening new position)
             spell,
@@ -76,13 +109,42 @@ contract TraderJoeSpellV3Integration is SetupBankAvax {
                 params.pid
             )
         );
+
+        doRefundETH();
+        doRefund(params.tokenA);
+        doRefund(params.tokenB);
+        doRefund(lp);
     }
 
     function increasePosition(
         uint256 positionId,
         address spell,
         AddLiquidityParams memory params
-    ) public {
+    ) external {
+        address lp = factory.getPair(params.tokenA, params.tokenB);
+
+        // approve tokens
+        ensureApprove(params.tokenA, address(bank));
+        ensureApprove(params.tokenB, address(bank));
+        ensureApprove(lp, address(bank));
+
+        // transfer tokens from user
+        IERC20(params.tokenA).safeTransferFrom(
+            msg.sender,
+            address(this),
+            params.amtAUser
+        );
+        IERC20(params.tokenB).safeTransferFrom(
+            msg.sender,
+            address(this),
+            params.amtBUser
+        );
+        IERC20(lp).safeTransferFrom(
+            msg.sender,
+            address(this),
+            params.amtLPUser
+        );
+
         bank.execute(
             positionId,
             spell,
@@ -103,13 +165,20 @@ contract TraderJoeSpellV3Integration is SetupBankAvax {
                 params.pid
             )
         );
+
+        doRefundETH();
+        doRefund(params.tokenA);
+        doRefund(params.tokenB);
+        doRefund(lp);
     }
 
     function reducePosition(
         address spell,
         uint256 positionId,
         RemoveLiquidityParams memory params
-    ) public {
+    ) external {
+        address lp = factory.getPair(params.tokenA, params.tokenB);
+
         bank.execute(
             positionId,
             spell,
@@ -128,21 +197,41 @@ contract TraderJoeSpellV3Integration is SetupBankAvax {
                 )
             )
         );
+
+        doRefundETH();
+        doRefund(params.tokenA);
+        doRefund(params.tokenB);
+        doRefund(lp);
     }
 
-    function harvestRewards(address spell, uint256 positionId) public {
+    function harvestRewards(address spell, uint256 positionId) external {
         bank.execute(
             positionId,
             spell,
             abi.encodeWithSelector(harvestRewardsSelector)
         );
+
+        // query position info from position id
+        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
+            positionId
+        );
+
+        IWBoostedMasterChefJoeWorker wrapper = IWBoostedMasterChefJoeWorker(
+            collateralTokenAddress
+        );
+
+        // find reward token address from wrapper
+        address rewardToken = address(wrapper.joe());
+
+        doRefund(rewardToken);
     }
 
     function getPendingRewards(uint256 positionId)
-        public
+        external
         view
         returns (uint256 pendingRewards)
     {
+        // query position info from position id
         (
             ,
             address collateralTokenAddress,
@@ -155,7 +244,7 @@ contract TraderJoeSpellV3Integration is SetupBankAvax {
         );
         IBoostedMasterChefJoe chef = IBoostedMasterChefJoe(wrapper.chef());
 
-        // get info
+        // get info for calculating rewards
         (uint256 pid, uint256 startTokenPerShare) = wrapper.decodeId(
             collateralId
         );
@@ -178,4 +267,36 @@ contract TraderJoeSpellV3Integration is SetupBankAvax {
 
         pendingRewards = (collateralAmount * increasingJoePerShare) / 10**18;
     }
+
+    /// @dev Ensure that the spell has approved the given spender to spend all of its tokens.
+    /// @param token The token to approve.
+    /// @param spender The spender to allow spending.
+    /// NOTE: This is safe because spell is never built to hold fund custody.
+    function ensureApprove(address token, address spender) internal {
+        if (!approved[token][spender]) {
+            IERC20(token).safeApprove(spender, type(uint256).max);
+            approved[token][spender] = true;
+        }
+    }
+
+    /// @dev Internal call to refund tokens.
+    /// @param token The token to perform the refund action.
+    function doRefund(address token) internal {
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        if (balance > 0) {
+            IERC20(token).safeTransfer(msg.sender, balance);
+        }
+    }
+
+    /// @dev Internal call to refund all AVAX.
+    function doRefundETH() internal {
+        uint256 balance = address(this).balance;
+        if (balance > 0) {
+            (bool success, ) = msg.sender.call{value: balance}(new bytes(0));
+            require(success, "refund ETH failed");
+        }
+    }
+
+    /// @dev Fallback function
+    receive() external payable {}
 }

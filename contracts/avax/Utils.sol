@@ -2,12 +2,17 @@
 
 pragma solidity 0.8.16;
 
+import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import "../../interfaces/avax/IBankAVAX.sol";
 
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 contract Utils is Test {
+    using SafeERC20 for IERC20;
+
     IBankAVAX bank = IBankAVAX(0x376d16C7dE138B01455a51dA79AD65806E9cd694);
 
     address ALPHAe = 0x2147EFFF675e4A4eE1C2f918d181cDBd7a8E208f;
@@ -61,5 +66,17 @@ contract Utils is Test {
             }
         }
         revert("index not found");
+    }
+
+    function balanceOf(address token, address user)
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 balance = IERC20(token).balanceOf(user);
+        if (token == WAVAX) {
+            return balance + address(user).balance;
+        }
+        return balance;
     }
 }

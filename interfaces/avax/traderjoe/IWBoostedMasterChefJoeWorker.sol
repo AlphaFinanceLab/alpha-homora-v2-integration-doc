@@ -5,7 +5,7 @@ pragma solidity 0.8.16;
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC1155/IERC1155.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.sol";
 
-import "../IERC20Wrapper.sol";
+import "../../IERC20Wrapper.sol";
 import "./IBoostedMasterChefJoe.sol";
 
 interface IWBoostedMasterChefJoeWorker is IERC1155, IERC20Wrapper {

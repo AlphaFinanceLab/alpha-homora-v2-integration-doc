@@ -6,18 +6,17 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.s
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "../../interfaces/avax/IBankAVAX.sol";
+
 import "./Utils.sol";
 
 import "forge-std/Test.sol";
 
-contract SetupBankAvax is Test, Utils {
+contract SetupBankAvax {
     using SafeERC20 for IERC20;
 
-    function setUp() public virtual override {
-        super.setUp();
+    IBankAVAX bank = IBankAVAX(0x376d16C7dE138B01455a51dA79AD65806E9cd694);
 
-        vm.label(address(bank), "bank");
-
+    constructor() {
         // setup credit limit
     }
 }
