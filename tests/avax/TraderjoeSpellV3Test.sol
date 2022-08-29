@@ -23,7 +23,7 @@ contract TraderJoeSpellV3Test is TraderJoeSpellV3Integration {
 
     // TODO: change tokenA you want
     address tokenA = WAVAX; // The first token of pool
-    // TODO: change tokenA you want
+    // TODO: change tokenB you want
     address tokenB = USDC; // The second token of pool
     // TODO: change pool id you want
     uint256 pid = 0; // Pool id of BoostedMasterChefJoe
