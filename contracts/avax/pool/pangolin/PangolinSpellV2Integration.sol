@@ -7,6 +7,7 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/Sa
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 import "../../BaseIntegration.sol";
+import "../../../utils/HomoraMath.sol";
 import "../../../../interfaces/avax/IBankAVAX.sol";
 import "../../../../interfaces/avax/pangolin/IMiniChefV2PNG.sol";
 import "../../../../interfaces/avax/pangolin/IWMiniChefV2PNG.sol";
@@ -17,6 +18,7 @@ import "forge-std/console2.sol";
 
 contract PangolinSpellV2Integration is BaseIntegration {
     using SafeERC20 for IERC20;
+    using HomoraMath for uint256;
 
     IBankAVAX bank; // homora bank
     IPangolinFactory factory; // pangolin factory
@@ -223,38 +225,32 @@ contract PangolinSpellV2Integration is BaseIntegration {
         doRefund(rewardToken);
     }
 
-    // function getPendingRewards(uint256 positionId)
-    //     external
-    //     view
-    //     returns (uint256 pendingRewards)
-    // {
-    //     (
-    //         ,
-    //         address collateralTokenAddress,
-    //         uint256 collateralId,
-    //         uint256 collateralAmount
-    //     ) = bank.getPositionInfo(positionId);
+    function getPendingRewards(uint256 positionId)
+        external
+        view
+        returns (uint256 pendingRewards)
+    {
+        // query position info from position id
+        (
+            ,
+            address collateralTokenAddress,
+            uint256 collateralId,
+            uint256 collateralAmount
+        ) = bank.getPositionInfo(positionId);
 
-    //     IWMiniChefV2PNG wrapper = IWMiniChefV2PNG(collateralTokenAddress);
-    //     IMiniChefV2PNG chef = IMiniChefV2PNG(wrapper.chef());
+        IWMiniChefV2PNG wrapper = IWMiniChefV2PNG(collateralTokenAddress);
+        IMiniChefV2PNG chef = IMiniChefV2PNG(wrapper.chef());
 
-    //     // get info
-    //     (uint256 pid, uint256 startTokenPerShare) = wrapper.decodeId(
-    //         collateralId
-    //     );
-    //     uint256 endTokenPerShare = wrapper.accJoePerShare();
-    //     (uint256 amount, ) = chef.userInfo(pid, address(wrapper));
+        // get info for calculating rewards
+        (uint256 pid, uint256 startRewardTokenPerShare) = wrapper.decodeId(
+            collateralId
+        );
+        (uint256 endRewardTokenPerShare, , ) = chef.poolInfo(pid);
+        (uint256 amount, ) = chef.userInfo(pid, address(wrapper));
 
-    //     // pending rewards that wrapper hasn't claimed
-    //     (uint256 pendingJoe, , , ) = chef.pendingTokens(pid, address(wrapper));
-
-    //     // calculate pending rewards
-    //     uint256 pendingJoePerShareFromChef = (pendingJoe * 10**18) / amount;
-
-    //     uint256 increasingJoePerShare = endTokenPerShare -
-    //         startTokenPerShare +
-    //         pendingJoePerShareFromChef;
-
-    //     pendingRewards = (collateralAmount * increasingJoePerShare) / 10**18;
-    // }
+        // calculate pending rewards
+        uint256 stReward = (startRewardTokenPerShare * amount).divCeil(1e12);
+        uint256 enReward = (endRewardTokenPerShare * amount) / 1e12;
+        pendingRewards = enReward - stReward;
+    }
 }

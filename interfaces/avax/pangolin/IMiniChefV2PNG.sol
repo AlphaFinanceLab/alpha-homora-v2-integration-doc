@@ -54,4 +54,13 @@ interface IMiniChefV2PNG {
             uint64 lastRewardTime,
             uint64 allocPoint
         );
+
+    /// @notice View function to see pending reward on frontend.
+    /// @param _pid The index of the pool.
+    /// @param _user Address of user.
+    /// @return pending reward for a given user.
+    function pendingReward(uint256 _pid, address _user)
+        external
+        view
+        returns (uint256 pending);
 }

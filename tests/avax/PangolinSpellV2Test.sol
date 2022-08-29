@@ -284,10 +284,10 @@ contract PangolinSpellV2Test is BaseTest, Utils {
         );
     }
 
-    // function testGetPendingRewards(uint256 positionId) public {
-    //     // increase block timestamp to calculate more rewards
-    //     vm.warp(block.timestamp + 10000);
-    //     uint256 pendingRewards = getPendingRewards(positionId);
-    //     console2.log("pendingRewards:", pendingRewards);
-    // }
+    function testGetPendingRewards(uint256 positionId) public {
+        // increase block timestamp to calculate more rewards
+        vm.warp(block.timestamp + 10000);
+        uint256 pendingRewards = integration.getPendingRewards(positionId);
+        console2.log("pendingRewards:", pendingRewards);
+    }
 }
