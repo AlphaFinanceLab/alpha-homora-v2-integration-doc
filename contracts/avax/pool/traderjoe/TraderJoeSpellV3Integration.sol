@@ -27,8 +27,8 @@ contract TraderJoeSpellV3Integration is SetupBankAvax {
     bytes4 harvestRewardsSelector = 0x40a65ad2;
 
     struct AddLiquidityParams {
-        address tokenA;
-        address tokenB;
+        address tokenA; // The first token of pool
+        address tokenB; // The second token of pool
         uint256 amtAUser; // Supplied tokenA amount
         uint256 amtBUser; // Supplied tokenB amount
         uint256 amtLPUser; // Supplied LP token amount
@@ -37,16 +37,16 @@ contract TraderJoeSpellV3Integration is SetupBankAvax {
         uint256 amtLPBorrow; // Borrow LP token amount
         uint256 amtAMin; // Desired tokenA amount (slippage control)
         uint256 amtBMin; // Desired tokenB amount (slippage control)
-        uint256 pid;
+        uint256 pid; // pool id of BoostedMasterChefJoe
     }
 
     struct RemoveLiquidityParams {
-        address tokenA;
-        address tokenB;
+        address tokenA; // The first token of pool
+        address tokenB; // The second token of pool
         uint256 amtLPTake; // Amount of LP being removed from the position
         uint256 amtLPWithdraw; // Amount of LP being received from removing the position (remaining will be converted to tokenA, tokenB)
-        uint256 amtARepay; // Repay tokenA amount
-        uint256 amtBRepay; // Repay tokenB amount
+        uint256 amtARepay; // Repay tokenA amount (repay all -> type(uint).max)
+        uint256 amtBRepay; // Repay tokenB amount (repay all -> type(uint).max)
         uint256 amtLPRepay; // Repay LP token amount
         uint256 amtAMin; // Desired tokenA amount
         uint256 amtBMin; // Desired tokenB amount

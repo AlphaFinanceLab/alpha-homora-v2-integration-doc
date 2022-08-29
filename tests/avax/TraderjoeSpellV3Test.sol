@@ -18,20 +18,21 @@ contract TraderJoeSpellV3Test is TraderJoeSpellV3Integration {
     using SafeERC20 for IERC20;
 
     ITraderJoeSpellV3 spell =
-        ITraderJoeSpellV3(0x28F1BdBc52Ad1aAab71660f4B33179335054BE6A);
+        ITraderJoeSpellV3(0x28F1BdBc52Ad1aAab71660f4B33179335054BE6A); // spell to interact with
 
-    address tokenA = WAVAX;
-    address tokenB = USDC;
+    address tokenA = WAVAX; // The first token of pool
+    address tokenB = USDC; // The second token of pool
 
     function setUp() public override {
         super.setUp();
 
         vm.label(address(spell), "spell");
 
-        // prepare fund
+        // prepare fund for user
         prepareFund();
 
-        // whitelist contract
+        // set whitelist that this contract can call HomoraBank, otherwise tx will fail
+        // NOTE: set whitelist contract must be executed from ALPHA governor
         setWhitelistContract();
     }
 
@@ -59,9 +60,11 @@ contract TraderJoeSpellV3Test is TraderJoeSpellV3Integration {
         _origins[0] = alice;
         _statuses[0] = true;
 
+        // NOTE: only ALPHA governor can set whitelist contract call
         vm.prank(bank.governor());
         bank.setWhitelistContractWithTxOrigin(_contracts, _origins, _statuses);
 
+        // NOTE: only ALPHA executive can set allow contract call
         vm.prank(bank.exec());
         bank.setAllowContractCalls(true);
     }
@@ -75,16 +78,18 @@ contract TraderJoeSpellV3Test is TraderJoeSpellV3Integration {
     }
 
     function testOpenPosition() public returns (uint256 positionId) {
-        uint256 amtAUser = 10000; // supply tokenA
-        uint256 amtBUser = 10000; // supply tokenB
-        uint256 amtLPUser = 0; // supply LP
-        uint256 amtABorrow = 10000; // borrow tokenA
-        uint256 amtBBorrow = 10000; // borrow tokenB
-        uint256 amtLPBorrow = 0; // borrow LP tokens (always 0 since LP for borrowing is disabled)
-        uint256 amtAMin = 0; // min tokenA
-        uint256 amtBMin = 0; // min tokenB
+        uint256 amtAUser = 10000;
+        uint256 amtBUser = 10000;
+        uint256 amtLPUser = 0;
+        uint256 amtABorrow = 10000;
+        uint256 amtBBorrow = 10000;
+        uint256 amtLPBorrow = 0;
+        uint256 amtAMin = 0;
+        uint256 amtBMin = 0;
         uint256 pid = 0;
 
+        // assume that user wants to open position by calling to integration contract
+        // so integration contract will forward a request to HomoraBank further
         vm.startPrank(alice);
         positionId = openPosition(
             address(spell),
@@ -106,17 +111,17 @@ contract TraderJoeSpellV3Test is TraderJoeSpellV3Integration {
     }
 
     function testIncreasePosition(uint256 positionId) public {
-        uint256 amtAUser = 10000; // supply tokenA
-        uint256 amtBUser = 10000; // supply tokenB
-        uint256 amtLPUser = 0; // supply LP
-        uint256 amtABorrow = 10000; // borrow tokenA
-        uint256 amtBBorrow = 10000; // borrow tokenB
-        uint256 amtLPBorrow = 0; // borrow LP tokens (always 0 since LP for borrowing is disabled)
-        uint256 amtAMin = 0; // min tokenA
-        uint256 amtBMin = 0; // min tokenB
+        uint256 amtAUser = 10000;
+        uint256 amtBUser = 10000;
+        uint256 amtLPUser = 0;
+        uint256 amtABorrow = 10000;
+        uint256 amtBBorrow = 10000;
+        uint256 amtLPBorrow = 0;
+        uint256 amtAMin = 0;
+        uint256 amtBMin = 0;
         uint256 pid = 0;
 
-        vm.startPrank(alice, alice);
+        vm.startPrank(alice);
         increasePosition(
             positionId,
             address(spell),
@@ -138,6 +143,7 @@ contract TraderJoeSpellV3Test is TraderJoeSpellV3Integration {
     }
 
     function testReducePosition(uint256 positionId) public {
+        // get collateral information from position id
         (
             ,
             address collateralTokenAddress,
@@ -145,15 +151,15 @@ contract TraderJoeSpellV3Test is TraderJoeSpellV3Integration {
             uint256 collateralAmount
         ) = bank.getPositionInfo(positionId);
 
-        uint256 amtLPTake = collateralAmount; // Take out LP token amount (from Homora)
-        uint256 amtLPWithdraw = 100; // Withdraw LP token amount (back to user)
-        uint256 amtARepay = type(uint256).max; // Repay tokenA amount (repay all -> type(uint).max)
-        uint256 amtBRepay = type(uint256).max; // Repay tokenB amount (repay all -> type(uint).max)
-        uint256 amtLPRepay = 0; // Repay LP token amount
-        uint256 amtAMin = 0; // Desired tokenA amount
-        uint256 amtBMin = 0; // Desired tokenB amount
+        uint256 amtLPTake = collateralAmount; // withdraw 100% of position
+        uint256 amtLPWithdraw = 100; // return only 100 LP to user
+        uint256 amtARepay = type(uint256).max; // repay 100% of tokenA
+        uint256 amtBRepay = type(uint256).max; // repay 100% of tokenA
+        uint256 amtLPRepay = 0; // (always 0 since LP borrow is disallowed)
+        uint256 amtAMin = 0; // amount of tokenA that user expects after withdrawal
+        uint256 amtBMin = 0; // amount of tokenB that user expects after withdrawal
 
-        vm.startPrank(alice, alice);
+        vm.startPrank(alice);
         reducePosition(
             address(spell),
             positionId,
@@ -173,13 +179,15 @@ contract TraderJoeSpellV3Test is TraderJoeSpellV3Integration {
     }
 
     function testHarvestRewards(uint256 positionId) public {
-        vm.startPrank(alice, alice);
+        vm.startPrank(alice);
         harvestRewards(address(spell), positionId);
         vm.stopPrank();
     }
 
     function testGetPendingRewards(uint256 positionId) public {
+        // increase block timestamp to calculate more pending rewards
         vm.warp(block.timestamp + 10000);
+
         uint256 pendingRewards = getPendingRewards(positionId);
         console2.log("pendingRewards:", pendingRewards);
     }
