@@ -182,13 +182,16 @@ contract TraderJoeSpellV3Test is TraderJoeSpellV3Integration {
     }
 
     function testHarvestRewards(uint256 positionId) public {
+        // increase block timestamp to calculate more rewards
+        vm.warp(block.timestamp + 10000);
+
         vm.startPrank(alice);
         harvestRewards(address(spell), positionId);
         vm.stopPrank();
     }
 
     function testGetPendingRewards(uint256 positionId) public {
-        // increase block timestamp to calculate more pending rewards
+        // increase block timestamp to calculate more rewards
         vm.warp(block.timestamp + 10000);
 
         uint256 pendingRewards = getPendingRewards(positionId);
