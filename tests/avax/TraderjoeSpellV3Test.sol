@@ -17,11 +17,15 @@ import "forge-std/console2.sol";
 contract TraderJoeSpellV3Test is TraderJoeSpellV3Integration {
     using SafeERC20 for IERC20;
 
+    // TODO: change spell address you want
     ITraderJoeSpellV3 spell =
         ITraderJoeSpellV3(0x28F1BdBc52Ad1aAab71660f4B33179335054BE6A); // spell to interact with
 
+    // TODO: change tokenA you want
     address tokenA = WAVAX; // The first token of pool
+    // TODO: change tokenA you want
     address tokenB = USDC; // The second token of pool
+    // TODO: change pool id you want
     uint256 pid = 0; // Pool id of BoostedMasterChefJoe
 
     function setUp() public override {
