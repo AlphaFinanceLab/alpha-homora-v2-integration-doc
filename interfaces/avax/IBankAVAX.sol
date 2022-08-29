@@ -3,6 +3,13 @@
 pragma solidity 0.8.16;
 
 interface IBankAVAX {
+    struct CreditLimit {
+        address user; // The whitelisted user address to set credit limit.
+        address token; // The token address to set credit limit.
+        uint256 limit; // The maximum token amount that can be borrowed (interest included).
+        address origin; // The tx origin of whitelisted user (using for whitelistContractWithTxOrigin).
+    }
+
     /// @dev Return the current position while under execution.
     function oracle() external view returns (address);
 
@@ -157,4 +164,8 @@ interface IBankAVAX {
     function governor() external returns (address);
 
     function exec() external returns (address);
+
+    /// @dev Set credit limits for users and tokens. Must be call by the governor.
+    /// @param _creditLimits The credit Limits to set (including user, token, address).
+    function setCreditLimits(CreditLimit[] calldata _creditLimits) external;
 }
