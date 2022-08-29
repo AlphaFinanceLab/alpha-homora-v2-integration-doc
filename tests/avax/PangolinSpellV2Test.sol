@@ -6,70 +6,68 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.s
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import "../../contracts/avax/SetupBankAvax.sol";
+import "./TestHelper.sol";
+import "../../contracts/avax/Utils.sol";
 import "../../contracts/avax/pool/pangolin/PangolinSpellV2Integration.sol";
+import "../../../../interfaces/avax/pangolin/IMiniChefV2PNG.sol";
+import "../../../../interfaces/avax/pangolin/IWMiniChefV2PNG.sol";
 import "../../../../interfaces/avax/pangolin/IPangolinSpellV2.sol";
+import "../../../../interfaces/avax/pangolin/IPangolinFactory.sol";
 
 import "forge-std/console2.sol";
 
-contract PangolinSpellV2Test is PangolinSpellV2Integration {
+contract PangolinSpellV2Test is TestHelper, Utils {
     using SafeERC20 for IERC20;
 
     // TODO: change spell address you want
     IPangolinSpellV2 spell =
         IPangolinSpellV2(0x966bbec3ac35452133B5c236b4139C07b1e2c9b1); // spell to interact with
+    IPangolinFactory factory =
+        IPangolinFactory(0xefa94DE7a4656D787667C749f7E1223D71E9FD88); // pangolin factory
 
     // TODO: change tokenA you want
-    address tokenA = USDCe; // The first token of pool
+    address tokenA = WBTCe; // The first token of pool
     // TODO: change tokenB you want
     address tokenB = WAVAX; // The second token of pool
     // TODO: change pool id you want
-    uint256 pid = 7; // Pool id of MinichefV2
+    uint256 pid = 5; // Pool id of MinichefV2
+
+    PangolinSpellV2Integration integration;
+    address lp;
 
     function setUp() public override {
         super.setUp();
 
         vm.label(address(spell), "spell");
+        vm.label(0x1f806f7C8dED893fd3caE279191ad7Aa3798E928, "minichefV2");
+        vm.label(0xa67CF61b0b9BC39c6df04095A118e53BFb9303c7, "wMinichefPNG");
+
+        // deploy integration contract
+        integration = new PangolinSpellV2Integration(factory);
+        lp = factory.getPair(tokenA, tokenB);
 
         // prepare fund for user
-        prepareFund();
+        prepareFund(alice, tokenA, tokenB, lp, address(integration));
 
-        // set whitelist that this contract can call HomoraBank, otherwise tx will fail
+        // set whitelist that integration contract can call HomoraBank, otherwise tx will fail
         // NOTE: set whitelist contract must be executed from ALPHA governor
-        setWhitelistContract();
-    }
+        setWhitelistContract(bank, alice, address(integration));
 
-    function prepareFund() internal {
-        vm.startPrank(alice, alice);
-
-        // approve tokens
-        IERC20(tokenA).safeApprove(address(bank), type(uint256).max);
-        IERC20(tokenB).safeApprove(address(bank), type(uint256).max);
-
-        // mint tokens
-        deal(tokenA, alice, type(uint256).max);
-        deal(tokenB, alice, type(uint256).max);
-
-        vm.stopPrank();
-    }
-
-    function setWhitelistContract() internal {
-        // set whitelist contract call
-        address[] memory _contracts = new address[](1);
-        address[] memory _origins = new address[](1);
-        bool[] memory _statuses = new bool[](1);
-
-        _contracts[0] = address(this);
-        _origins[0] = alice;
-        _statuses[0] = true;
-
-        // NOTE: only ALPHA governor can set whitelist contract call
-        vm.prank(bank.governor());
-        bank.setWhitelistContractWithTxOrigin(_contracts, _origins, _statuses);
-
-        // NOTE: only ALPHA executive can set allow contract call
-        vm.prank(bank.exec());
-        bank.setAllowContractCalls(true);
+        // set credit limit that integration contract can be borrow with uncollateralized loan
+        setCreditLimit(
+            bank,
+            address(integration),
+            tokenA,
+            type(uint256).max,
+            alice
+        );
+        setCreditLimit(
+            bank,
+            address(integration),
+            tokenB,
+            type(uint256).max,
+            alice
+        );
     }
 
     function testAll() public {
@@ -77,25 +75,32 @@ contract PangolinSpellV2Test is PangolinSpellV2Integration {
         testIncreasePosition(positionId);
         testReducePosition(positionId);
         // testGetPendingRewards(positionId);
-        testHarvestRewards(positionId);
+        // testHarvestRewards(positionId);
     }
 
     function testOpenPosition() public returns (uint256 positionId) {
-        uint256 amtAUser = 10000;
-        uint256 amtBUser = 10000;
-        uint256 amtLPUser = 0;
-        uint256 amtABorrow = 10000;
-        uint256 amtBBorrow = 10000;
+        uint256 amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
+        uint256 amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
+        uint256 amtLPUser = 100;
+        uint256 amtABorrow = amtAUser;
+        uint256 amtBBorrow = amtBUser;
         uint256 amtLPBorrow = 0;
         uint256 amtAMin = 0;
         uint256 amtBMin = 0;
 
+        // user info before
+        uint256 userBalanceTokenA_before = balanceOf(tokenA, alice);
+        uint256 userBalanceTokenB_before = balanceOf(tokenB, alice);
+        uint256 userBalanceLP_before = balanceOf(lp, alice);
+
         // assume that user wants to open position by calling to integration contract
         // so integration contract will forward a request to HomoraBank further
+
+        // call contract
         vm.startPrank(alice);
-        positionId = openPosition(
+        positionId = integration.openPosition(
             address(spell),
-            AddLiquidityParams(
+            PangolinSpellV2Integration.AddLiquidityParams(
                 tokenA,
                 tokenB,
                 amtAUser,
@@ -110,23 +115,47 @@ contract PangolinSpellV2Test is PangolinSpellV2Integration {
             )
         );
         vm.stopPrank();
+
+        // user info after
+        uint256 userBalanceTokenA_after = balanceOf(tokenA, alice);
+        uint256 userBalanceTokenB_after = balanceOf(tokenB, alice);
+        uint256 userBalanceLP_after = balanceOf(lp, alice);
+
+        require(
+            userBalanceTokenA_before > userBalanceTokenA_after,
+            "incorrect user balance of tokenA"
+        );
+        require(
+            userBalanceTokenB_before > userBalanceTokenB_after,
+            "incorrect user balance of tokenB"
+        );
+        require(
+            userBalanceLP_before > userBalanceLP_after,
+            "incorrect user balance of lp"
+        );
     }
 
     function testIncreasePosition(uint256 positionId) public {
-        uint256 amtAUser = 10000; // supply tokenA
-        uint256 amtBUser = 10000; // supply tokenB
-        uint256 amtLPUser = 0; // supply LP
-        uint256 amtABorrow = 10000; // borrow tokenA
-        uint256 amtBBorrow = 10000; // borrow tokenB
-        uint256 amtLPBorrow = 0; // borrow LP tokens (always 0 since LP for borrowing is disabled)
-        uint256 amtAMin = 0; // min tokenA
-        uint256 amtBMin = 0; // min tokenB
+        uint256 amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
+        uint256 amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
+        uint256 amtLPUser = 100;
+        uint256 amtABorrow = amtAUser;
+        uint256 amtBBorrow = amtBUser;
+        uint256 amtLPBorrow = 0;
+        uint256 amtAMin = 0;
+        uint256 amtBMin = 0;
 
+        // user info before
+        uint256 userBalanceTokenA_before = balanceOf(tokenA, alice);
+        uint256 userBalanceTokenB_before = balanceOf(tokenB, alice);
+        uint256 userBalanceLP_before = balanceOf(lp, alice);
+
+        // call contract
         vm.startPrank(alice);
-        increasePosition(
+        integration.increasePosition(
             positionId,
             address(spell),
-            AddLiquidityParams(
+            PangolinSpellV2Integration.AddLiquidityParams(
                 tokenA,
                 tokenB,
                 amtAUser,
@@ -141,6 +170,24 @@ contract PangolinSpellV2Test is PangolinSpellV2Integration {
             )
         );
         vm.stopPrank();
+
+        // user info after
+        uint256 userBalanceTokenA_after = balanceOf(tokenA, alice);
+        uint256 userBalanceTokenB_after = balanceOf(tokenB, alice);
+        uint256 userBalanceLP_after = balanceOf(lp, alice);
+
+        require(
+            userBalanceTokenA_before > userBalanceTokenA_after,
+            "incorrect user balance of tokenA"
+        );
+        require(
+            userBalanceTokenB_before > userBalanceTokenB_after,
+            "incorrect user balance of tokenB"
+        );
+        require(
+            userBalanceLP_before > userBalanceLP_after,
+            "incorrect user balance of lp"
+        );
     }
 
     function testReducePosition(uint256 positionId) public {
@@ -153,18 +200,24 @@ contract PangolinSpellV2Test is PangolinSpellV2Integration {
         ) = bank.getPositionInfo(positionId);
 
         uint256 amtLPTake = collateralAmount; // withdraw 100% of position
-        uint256 amtLPWithdraw = 100; // return only 100 LP to user
+        uint256 amtLPWithdraw = 0; // return only 100 LP to user
         uint256 amtARepay = type(uint256).max; // repay 100% of tokenA
-        uint256 amtBRepay = type(uint256).max; // repay 100% of tokenA
+        uint256 amtBRepay = type(uint256).max; // repay 100% of tokenB
         uint256 amtLPRepay = 0; // (always 0 since LP borrow is disallowed)
         uint256 amtAMin = 0; // amount of tokenA that user expects after withdrawal
         uint256 amtBMin = 0; // amount of tokenB that user expects after withdrawal
 
+        // user info before
+        uint256 userBalanceTokenA_before = balanceOf(tokenA, alice);
+        uint256 userBalanceTokenB_before = balanceOf(tokenB, alice);
+        uint256 userBalanceLP_before = balanceOf(lp, alice);
+
+        // call contract
         vm.startPrank(alice);
-        reducePosition(
+        integration.reducePosition(
             address(spell),
             positionId,
-            RemoveLiquidityParams(
+            PangolinSpellV2Integration.RemoveLiquidityParams(
                 tokenA,
                 tokenB,
                 amtLPTake,
@@ -177,15 +230,58 @@ contract PangolinSpellV2Test is PangolinSpellV2Integration {
             )
         );
         vm.stopPrank();
+
+        // user info after
+        uint256 userBalanceTokenA_after = balanceOf(tokenA, alice);
+        uint256 userBalanceTokenB_after = balanceOf(tokenB, alice);
+        uint256 userBalanceLP_after = balanceOf(lp, alice);
+
+        require(
+            userBalanceTokenA_after > userBalanceTokenA_before,
+            "incorrect user balance of tokenA"
+        );
+        require(
+            userBalanceTokenB_after > userBalanceTokenB_before,
+            "incorrect user balance of tokenB"
+        );
+        require(
+            userBalanceLP_after - userBalanceLP_before == amtLPWithdraw,
+            "incorrect user balance of LP"
+        );
     }
 
     function testHarvestRewards(uint256 positionId) public {
         // increase block timestamp to calculate more rewards
         vm.warp(block.timestamp + 10000);
 
+        // query position info from position id
+        (
+            ,
+            address collateralTokenAddress,
+            uint256 collateralId,
+            uint256 collateralAmount
+        ) = bank.getPositionInfo(positionId);
+
+        IWMiniChefV2PNG wrapper = IWMiniChefV2PNG(collateralTokenAddress);
+
+        // find reward token address
+        address rewardToken = address(wrapper.png());
+
+        // user info before
+        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
+
+        // call contract
         vm.startPrank(alice);
-        harvestRewards(address(spell), positionId);
+        integration.harvestRewards(address(spell), positionId);
         vm.stopPrank();
+
+        // user info after
+        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
+
+        require(
+            userBalanceReward_after > userBalanceReward_before,
+            "incorrect user balance of reward token"
+        );
     }
 
     // function testGetPendingRewards(uint256 positionId) public {
