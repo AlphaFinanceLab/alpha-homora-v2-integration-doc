@@ -14,10 +14,10 @@ interface IPangolinSpellV2 {
         uint256 amtBMin; // Desired tokenB amount (slippage control)
     }
     struct RepayAmounts {
-        uint256 amtLPTake; // Take out LP token amount (from Homora)
-        uint256 amtLPWithdraw; // Withdraw LP token amount (back to caller)
-        uint256 amtARepay; // Repay tokenA amount
-        uint256 amtBRepay; // Repay tokenB amount
+        uint256 amtLPTake; // Amount of LP being removed from the position
+        uint256 amtLPWithdraw; // Amount of LP being received from removing the position (remaining will be converted to tokenA, tokenB)
+        uint256 amtARepay; // Repay tokenA amount (repay all -> type(uint).max)
+        uint256 amtBRepay; // Repay tokenB amount (repay all -> type(uint).max)
         uint256 amtLPRepay; // Repay LP token amount
         uint256 amtAMin; // Desired tokenA amount
         uint256 amtBMin; // Desired tokenB amount
