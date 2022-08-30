@@ -7,18 +7,20 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/Sa
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 import "./BaseFTMTest.sol";
-import "./Utils.sol";
+import "./UtilsFTM.sol";
 import "../../contracts/ftm/pool/spookyswap/SpookySwapSpellV2Integration.sol";
+import "../../../../interfaces/ftm/IBankFTM.sol";
 import "../../../../interfaces/ftm/spookyswap/ISpookySwapFactory.sol";
 import "../../../../interfaces/ftm/spookyswap/ISpookySwapSpellV2.sol";
 import "../../../../interfaces/ftm/spookyswap/IMasterChefBooV2.sol";
 import "../../../../interfaces/ftm/spookyswap/IWMasterChefBooV2.sol";
-import "../../../../interfaces/ftm/IBankFTM.sol";
 
 import "forge-std/console2.sol";
 
-contract SpookySwapSpellV2Test is BaseFTMTest, Utils {
+contract SpookySwapSpellV2Test is BaseFTMTest, UtilsFTM {
     using SafeERC20 for IERC20;
+
+    IBankFTM bank = IBankFTM(bankAddress);
 
     // TODO: change spell address you want
     ISpookySwapSpellV2 spell =
@@ -42,7 +44,7 @@ contract SpookySwapSpellV2Test is BaseFTMTest, Utils {
         vm.label(address(spell), "spell");
 
         // deploy integration contract
-        integration = new SpookySwapSpellV2Integration(IBankFTM(bank), factory);
+        integration = new SpookySwapSpellV2Integration(bank, factory);
         lp = factory.getPair(tokenA, tokenB);
 
         // prepare fund for user
@@ -50,21 +52,11 @@ contract SpookySwapSpellV2Test is BaseFTMTest, Utils {
 
         // set whitelist that integration contract can call HomoraBank, otherwise tx will fail
         // NOTE: set whitelist contract must be executed from ALPHA governor
-        setWhitelistContract(IBankFTM(bank), alice, address(integration));
+        setWhitelistContract(bank, alice, address(integration));
 
         // set credit limit that integration contract can be borrow with uncollateralized loan
-        setCreditLimit(
-            IBankFTM(bank),
-            address(integration),
-            tokenA,
-            type(uint256).max
-        );
-        setCreditLimit(
-            IBankFTM(bank),
-            address(integration),
-            tokenB,
-            type(uint256).max
-        );
+        setCreditLimit(bank, address(integration), tokenA, type(uint256).max);
+        setCreditLimit(bank, address(integration), tokenB, type(uint256).max);
     }
 
     function testAll() public {
@@ -189,9 +181,7 @@ contract SpookySwapSpellV2Test is BaseFTMTest, Utils {
 
     function testReducePosition(uint256 positionId) public {
         // get collateral information from position id
-        (, , , uint256 collateralAmount) = IBankFTM(bank).getPositionInfo(
-            positionId
-        );
+        (, , , uint256 collateralAmount) = bank.getPositionInfo(positionId);
 
         uint256 amtLPTake = collateralAmount; // withdraw 100% of position
         uint256 amtLPWithdraw = 100; // return only 100 LP to user
@@ -249,7 +239,7 @@ contract SpookySwapSpellV2Test is BaseFTMTest, Utils {
         vm.warp(block.timestamp + 10000);
 
         // query position info from position id
-        (, address collateralTokenAddress, , ) = IBankFTM(bank).getPositionInfo(
+        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
             positionId
         );
 
