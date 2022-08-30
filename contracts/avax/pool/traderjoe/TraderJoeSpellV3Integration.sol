@@ -6,7 +6,7 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.s
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import "../../BaseIntegration.sol";
+import "../../../BaseIntegration.sol";
 import "../../../../interfaces/avax/IBankAVAX.sol";
 import "../../../../interfaces/avax/traderjoe/ITraderJoeSpellV3.sol";
 import "../../../../interfaces/avax/traderjoe/IBoostedMasterChefJoe.sol";
