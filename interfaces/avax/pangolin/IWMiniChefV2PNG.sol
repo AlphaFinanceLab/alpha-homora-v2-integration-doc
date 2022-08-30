@@ -11,7 +11,7 @@ import "./IMiniChefV2PNG.sol";
 
 interface IWMiniChefV2PNG is IERC1155, IERC20Wrapper, IGovernable {
     /// @dev Return Pangolin minichef
-    function chef() external view returns (IBoostedMasterChefJoe);
+    function chef() external view returns (IMiniChefV2PNG);
 
     /// @dev Return Pangolin token
     function png() external view returns (IERC20);
@@ -20,14 +20,14 @@ interface IWMiniChefV2PNG is IERC1155, IERC20Wrapper, IGovernable {
     /// @param pid Pool id (16-bit)
     /// @param pngPerShare PNG amount per share, multiplied by 1e18 (240-bit)
     function encodeId(uint256 pid, uint256 pngPerShare)
-        public
+        external
         pure
         returns (uint256 id);
 
     /// @dev Decode ERC1155 token id to pid, pngPerShare
     /// @param id Token id
     function decodeId(uint256 id)
-        public
+        external
         pure
         returns (uint256 pid, uint256 pngPerShare);
 

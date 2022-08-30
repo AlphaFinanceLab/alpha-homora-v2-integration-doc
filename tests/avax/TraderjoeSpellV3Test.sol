@@ -6,8 +6,7 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.s
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import "./BaseTest.sol";
-import "./Utils.sol";
+import "./UtilsAVAX.sol";
 import "../../contracts/avax/pool/traderjoe/TraderJoeSpellV3Integration.sol";
 import "../../../../interfaces/avax/traderjoe/ITraderJoeFactory.sol";
 import "../../../../interfaces/avax/traderjoe/ITraderJoeSpellV3.sol";
@@ -16,8 +15,10 @@ import "../../../../interfaces/avax/traderjoe/IWBoostedMasterChefJoeWorker.sol";
 
 import "forge-std/console2.sol";
 
-contract TraderJoeSpellV3Test is BaseTest, Utils {
+contract TraderJoeSpellV3Test is UtilsAVAX {
     using SafeERC20 for IERC20;
+
+    IBankAVAX bank = IBankAVAX(bankAddress);
 
     // TODO: change spell address you want
     ITraderJoeSpellV3 spell =

@@ -56,7 +56,7 @@ contract TraderJoeSpellV3Integration is BaseIntegration {
         uint256 amtBMin; // Desired tokenB amount
     }
 
-    constructor(IBankAVAX _bank, ITraderJoeFactory _factory) public {
+    constructor(IBankAVAX _bank, ITraderJoeFactory _factory) {
         bank = _bank;
         factory = _factory;
     }

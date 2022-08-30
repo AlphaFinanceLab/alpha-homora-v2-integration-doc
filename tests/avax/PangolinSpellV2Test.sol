@@ -6,8 +6,7 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.s
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import "./BaseTest.sol";
-import "./Utils.sol";
+import "./UtilsAVAX.sol";
 import "../../contracts/avax/pool/pangolin/PangolinSpellV2Integration.sol";
 import "../../../../interfaces/avax/pangolin/IMiniChefV2PNG.sol";
 import "../../../../interfaces/avax/pangolin/IWMiniChefV2PNG.sol";
@@ -16,8 +15,10 @@ import "../../../../interfaces/avax/pangolin/IPangolinFactory.sol";
 
 import "forge-std/console2.sol";
 
-contract PangolinSpellV2Test is BaseTest, Utils {
+contract PangolinSpellV2Test is UtilsAVAX {
     using SafeERC20 for IERC20;
+
+    IBankAVAX bank = IBankAVAX(bankAddress);
 
     // TODO: change spell address you want
     IPangolinSpellV2 spell =
@@ -255,12 +256,9 @@ contract PangolinSpellV2Test is BaseTest, Utils {
         vm.warp(block.timestamp + 10000);
 
         // query position info from position id
-        (
-            ,
-            address collateralTokenAddress,
-            uint256 collateralId,
-            uint256 collateralAmount
-        ) = bank.getPositionInfo(positionId);
+        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
+            positionId
+        );
 
         IWMiniChefV2PNG wrapper = IWMiniChefV2PNG(collateralTokenAddress);
 

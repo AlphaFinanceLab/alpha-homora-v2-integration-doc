@@ -58,7 +58,7 @@ contract PangolinSpellV2Integration is BaseIntegration {
         uint256 amtBMin; // Desired tokenB amount
     }
 
-    constructor(IBankAVAX _bank, IPangolinFactory _factory) public {
+    constructor(IBankAVAX _bank, IPangolinFactory _factory) {
         bank = _bank;
         factory = _factory;
     }
