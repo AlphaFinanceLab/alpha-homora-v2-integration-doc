@@ -190,12 +190,7 @@ contract TraderJoeSpellV3Test is BaseTest, Utils {
 
     function testReducePosition(uint256 positionId) public {
         // get collateral information from position id
-        (
-            ,
-            address collateralTokenAddress,
-            uint256 collateralId,
-            uint256 collateralAmount
-        ) = bank.getPositionInfo(positionId);
+        (, , , uint256 collateralAmount) = bank.getPositionInfo(positionId);
 
         uint256 amtLPTake = collateralAmount; // withdraw 100% of position
         uint256 amtLPWithdraw = 100; // return only 100 LP to user
@@ -253,12 +248,9 @@ contract TraderJoeSpellV3Test is BaseTest, Utils {
         vm.warp(block.timestamp + 10000);
 
         // query position info from position id
-        (
-            ,
-            address collateralTokenAddress,
-            uint256 collateralId,
-            uint256 collateralAmount
-        ) = bank.getPositionInfo(positionId);
+        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
+            positionId
+        );
 
         IWBoostedMasterChefJoeWorker wrapper = IWBoostedMasterChefJoeWorker(
             collateralTokenAddress
