@@ -2,7 +2,10 @@
 
 pragma solidity 0.8.16;
 
-interface IBankAVAX {
+import "../IGovernable.sol";
+import "../IOracle.sol";
+
+interface IBankAVAX is IGovernable {
     struct Bank {
         bool isListed; // Whether this market exists.
         uint8 index; // Reverse look up index for this bank.
@@ -48,12 +51,6 @@ interface IBankAVAX {
 
     /// @dev Return whether cToken is existence in bank.
     function cTokenInBank(address cToken) external view returns (bool);
-
-    /// @dev Return position data from position ID.
-    function positions(uint256 positionId)
-        external
-        view
-        returns (Position memory);
 
     /// @dev Return the boolean status whether to allow call from contract (false = onlyEOA)
     function allowContractCalls() external view returns (bool);
@@ -152,14 +149,14 @@ interface IBankAVAX {
     function setBankStatus(uint256 _bankStatus) external;
 
     /// @dev Bank borrow status allowed or not
-    function allowBorrowStatus() public view returns (bool);
+    function allowBorrowStatus() external view returns (bool);
 
     /// @dev Bank repay status allowed or not
-    function allowRepayStatus() public view returns (bool);
+    function allowRepayStatus() external view returns (bool);
 
     /// @dev Trigger interest accrual for the given bank.
     /// @param token The underlying token to trigger the interest accrual.
-    function accrue(address token) public;
+    function accrue(address token) external;
 
     /// @dev Convenient function to trigger interest accrual for a list of banks.
     /// @param tokens The list of banks to trigger interest accrual.
@@ -169,9 +166,8 @@ interface IBankAVAX {
     /// @param positionId The position to query for borrow balance.
     /// @param token The token to query for borrow balance.
     function borrowBalanceStored(uint256 positionId, address token)
-        public
+        external
         view
-        override
         returns (uint256);
 
     /// @dev Trigger interest accrual and return the current borrow balance.
@@ -179,7 +175,6 @@ interface IBankAVAX {
     /// @param token The token to query for borrow balance.
     function borrowBalanceCurrent(uint256 positionId, address token)
         external
-        override
         returns (uint256);
 
     /// @dev Return bank information for the given token.
@@ -211,7 +206,6 @@ interface IBankAVAX {
     function getCurrentPositionInfo()
         external
         view
-        override
         returns (
             address owner,
             address collToken,
@@ -237,16 +231,15 @@ interface IBankAVAX {
     /// @dev Return the total collateral value of the given position in ETH.
     /// @param positionId The position ID to query for the collateral value.
     function getCollateralETHValue(uint256 positionId)
-        public
+        external
         view
         returns (uint256);
 
     /// @dev Return the total borrow value of the given position in ETH.
     /// @param positionId The position ID to query for the borrow value.
     function getBorrowETHValue(uint256 positionId)
-        public
+        external
         view
-        override
         returns (uint256);
 
     /// @dev Add a new bank to the ecosystem.
@@ -325,7 +318,4 @@ interface IBankAVAX {
     /// @dev Set credit limits for users and tokens. Must be call by the governor.
     /// @param _creditLimits The credit Limits to set (including user, token, address).
     function setCreditLimits(CreditLimit[] calldata _creditLimits) external;
-
-    /// @dev Return governor
-    function governor() external returns (address);
 }
