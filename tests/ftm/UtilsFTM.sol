@@ -7,8 +7,11 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/Sa
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 import "../Utils.sol";
+import "../../interfaces/ftm/IBankFTM.sol";
 
 contract UtilsFTM is Utils {
+    using SafeERC20 for IERC20;
+
     address bankAddress = 0x060E91A44f16DFcc1e2c427A0383596e1D2e886f;
 
     address USDC = 0x04068DA6C83AFCFA0e13ba15A6696662335D5B75;
@@ -31,5 +34,43 @@ contract UtilsFTM is Utils {
             return balance + address(user).balance;
         }
         return balance;
+    }
+
+    function setWhitelistContract(
+        IBankFTM _bank,
+        address,
+        address _contract
+    ) internal {
+        // set whitelist contract call
+        address[] memory _contracts = new address[](1);
+        bool[] memory _statuses = new bool[](1);
+
+        _contracts[0] = _contract;
+        _statuses[0] = true;
+
+        // NOTE: only ALPHA governor can set whitelist contract call
+        vm.prank(_bank.governor());
+        _bank.setWhitelistUsers(_contracts, _statuses);
+
+        // NOTE: only ALPHA executive can set allow contract call
+        vm.prank(_bank.exec());
+        _bank.setAllowContractCalls(true);
+    }
+
+    function setCreditLimit(
+        IBankFTM _bank,
+        address _user,
+        address _token,
+        uint256 _limit
+    ) internal {
+        IBankFTM.CreditLimit[] memory creditLimits = new IBankFTM.CreditLimit[](
+            1
+        );
+
+        creditLimits[0] = IBankFTM.CreditLimit(_user, _token, _limit);
+
+        // NOTE: only ALPHA governor can set credit limit
+        vm.prank(_bank.governor());
+        _bank.setCreditLimits(creditLimits);
     }
 }

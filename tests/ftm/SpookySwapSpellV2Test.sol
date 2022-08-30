@@ -6,7 +6,6 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.s
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import "./BaseFTMTest.sol";
 import "./UtilsFTM.sol";
 import "../../contracts/ftm/pool/spookyswap/SpookySwapSpellV2Integration.sol";
 import "../../../../interfaces/ftm/IBankFTM.sol";
@@ -17,7 +16,7 @@ import "../../../../interfaces/ftm/spookyswap/IWMasterChefBooV2.sol";
 
 import "forge-std/console2.sol";
 
-contract SpookySwapSpellV2Test is BaseFTMTest, UtilsFTM {
+contract SpookySwapSpellV2Test is UtilsFTM {
     using SafeERC20 for IERC20;
 
     IBankFTM bank = IBankFTM(bankAddress);
