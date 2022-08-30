@@ -9,7 +9,7 @@ import "./IBoostedMasterChefJoe.sol";
 import "../../IERC20Wrapper.sol";
 import "../../IGovernable.sol";
 
-interface IWBoostedMasterChefJoeWorker is IERC1155, IERC20Wrapper {
+interface IWBoostedMasterChefJoeWorker is IERC1155, IERC20Wrapper, IGovernable {
     /// @dev Return TraderJoe masterChef
     function chef() external view returns (IBoostedMasterChefJoe);
 

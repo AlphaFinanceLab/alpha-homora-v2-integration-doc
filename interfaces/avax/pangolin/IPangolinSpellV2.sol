@@ -23,6 +23,11 @@ interface IPangolinSpellV2 {
         uint256 amtBMin; // Desired tokenB amount
     }
 
+    /// @dev Add liquidity to Pangolin pool, with staking to miniChef
+    /// @param tokenA Token A for the pair
+    /// @param tokenB Token B for the pair
+    /// @param amt Amounts of tokens to supply, borrow, and get.
+    /// @param pid Pool id
     function addLiquidityWMiniChef(
         address tokenA,
         address tokenB,
@@ -30,11 +35,16 @@ interface IPangolinSpellV2 {
         uint256 pid
     ) external payable;
 
+    // @dev Remove liquidity from Pangolin pool, from miniChef staking
+    /// @param tokenA Token A for the pair
+    /// @param tokenB Token B for the pair
+    /// @param amt Amounts of tokens to take out, withdraw, repay, and get.
     function removeLiquidityWMiniChef(
         address tokenA,
         address tokenB,
         RepayAmounts calldata amt
     ) external;
 
+    /// @dev Harvest staking reward tokens to in-exec position's owner
     function harvestWMiniChefRewards() external;
 }

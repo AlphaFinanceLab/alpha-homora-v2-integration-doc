@@ -23,6 +23,12 @@ interface ITraderJoeSpellV3 {
         uint256 amtBMin; // Desired tokenB amount
     }
 
+    /// @dev Add liquidity to TraderJoe pool, with staking to masterChef
+    /// @dev not support pool that has a rewarder.
+    /// @param tokenA Token A for the pair
+    /// @param tokenB Token B for the pair
+    /// @param amt Amounts of tokens to supply, borrow, and get.
+    /// @param pid Pool id
     function addLiquidityWMasterChef(
         address tokenA,
         address tokenB,
@@ -30,11 +36,16 @@ interface ITraderJoeSpellV3 {
         uint256 pid
     ) external payable;
 
+    /// @dev Remove liquidity from TraderJoe pool, from masterChef staking
+    /// @param tokenA Token A for the pair
+    /// @param tokenB Token B for the pair
+    /// @param amt Amounts of tokens to take out, withdraw, repay, and get.
     function removeLiquidityWMasterChef(
         address tokenA,
         address tokenB,
         RepayAmounts calldata amt
     ) external;
 
+    /// @dev Harvest Joe reward tokens to in-exec position's owner
     function harvestWMasterChef() external;
 }
