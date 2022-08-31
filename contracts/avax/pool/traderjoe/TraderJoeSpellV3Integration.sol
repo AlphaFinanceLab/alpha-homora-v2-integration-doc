@@ -7,6 +7,7 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/Sa
 import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 import "../../../BaseIntegration.sol";
+import "../../../utils/HomoraMath.sol";
 import "../../../../interfaces/avax/IBankAVAX.sol";
 import "../../../../interfaces/avax/traderjoe/ITraderJoeSpellV3.sol";
 import "../../../../interfaces/avax/traderjoe/IBoostedMasterChefJoe.sol";
@@ -17,6 +18,7 @@ import "forge-std/console2.sol";
 
 contract TraderJoeSpellV3Integration is BaseIntegration {
     using SafeERC20 for IERC20;
+    using HomoraMath for uint256;
 
     IBankAVAX bank; // homora bank
     ITraderJoeFactory factory; // traderjoe factory
@@ -253,18 +255,29 @@ contract TraderJoeSpellV3Integration is BaseIntegration {
             pid,
             address(wrapper)
         );
+        uint256 totalSupply = userInfo.amount; // total lp from wrapper deposited in Chef
 
-        // pending rewards that wrapper hasn't claimed
-        (uint256 pendingJoe, , , ) = chef.pendingTokens(pid, address(wrapper));
+        // pending rewards separates into two parts
+        // 1. pending rewards that are in the wrapper contract
+        uint256 PRECISION = 10**18;
+        uint256 stReward = (startTokenPerShare * collateralAmount).divCeil(
+            PRECISION
+        );
+        uint256 enReward = (endTokenPerShare * collateralAmount) / PRECISION;
+        uint256 userPendingRewardsFromWrapper = (enReward > stReward)
+            ? enReward - stReward
+            : 0;
 
-        // calculate pending rewards
-        uint256 pendingJoePerShareFromChef = (pendingJoe * 10**18) /
-            userInfo.amount;
+        // 2. pending rewards that wrapper hasn't claimed from Chef's contract
+        (uint256 pendingRewardFromChef, , , ) = chef.pendingTokens(
+            pid,
+            address(wrapper)
+        );
+        uint256 userPendingRewardFromChef = (collateralAmount *
+            pendingRewardFromChef) / totalSupply;
 
-        uint256 increasingJoePerShare = endTokenPerShare -
-            startTokenPerShare +
-            pendingJoePerShareFromChef;
-
-        pendingRewards = (collateralAmount * increasingJoePerShare) / 10**18;
+        pendingRewards =
+            userPendingRewardsFromWrapper +
+            userPendingRewardFromChef;
     }
 }

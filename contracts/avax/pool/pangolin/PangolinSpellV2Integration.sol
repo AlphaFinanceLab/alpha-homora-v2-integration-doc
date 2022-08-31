@@ -246,11 +246,13 @@ contract PangolinSpellV2Integration is BaseIntegration {
             collateralId
         );
         (uint256 endRewardTokenPerShare, , ) = chef.poolInfo(pid);
-        (uint256 amount, ) = chef.userInfo(pid, address(wrapper));
+        (uint256 totalSupply, ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
 
         // calculate pending rewards
-        uint256 stReward = (startRewardTokenPerShare * amount).divCeil(1e12);
-        uint256 enReward = (endRewardTokenPerShare * amount) / 1e12;
-        pendingRewards = enReward - stReward;
+        uint256 stReward = (startRewardTokenPerShare * totalSupply).divCeil(
+            1e12
+        );
+        uint256 enReward = (endRewardTokenPerShare * totalSupply) / 1e12;
+        pendingRewards = (enReward > stReward) ? enReward - stReward : 0;
     }
 }
