@@ -14,12 +14,16 @@ contract UtilsFTM is Utils {
 
     address bankAddress = 0x060E91A44f16DFcc1e2c427A0383596e1D2e886f;
 
+    address BTC = 0x321162Cd933E2Be498Cd2267a90534A804051b11;
+    address ETH = 0x74b23882a30290451A17c44f4F05243b6b58C76d;
     address USDC = 0x04068DA6C83AFCFA0e13ba15A6696662335D5B75;
     address WFTM = 0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83;
 
     function setUp() public virtual {
         vm.label(bankAddress, "bank");
 
+        vm.label(BTC, "BTC");
+        vm.label(ETH, "ETH");
         vm.label(USDC, "USDC");
         vm.label(WFTM, "WFTM");
     }
