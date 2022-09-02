@@ -264,6 +264,7 @@ contract UniswapV3SpellIntegration is BaseIntegration {
     IWUniswapV3Position.PositionInfo memory posInfo = wrapper
       .getPositionInfoFromTokenId(collateralTokenId);
 
+    doRefundETH();
     doRefund(posInfo.token0);
     doRefund(posInfo.token1);
   }

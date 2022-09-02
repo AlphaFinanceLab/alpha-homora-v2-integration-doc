@@ -52,7 +52,7 @@ interface IWUniswapV3Position is IERC1155, IGovernable {
     uint256 _deadline
   ) external returns (uint256 amount0, uint256 amount1);
 
-  function collectFee(uint256 _id)
+  function collectFee(uint256 _tokenId)
     external
     returns (uint256 amount0, uint256 amount1);
 }
