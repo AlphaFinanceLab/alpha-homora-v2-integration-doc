@@ -29,11 +29,14 @@ interface IWUniswapV3Position is IERC1155, IGovernable {
     view
     returns (IUniswapV3PositionManager positionManager);
 
-  function getUnderlyingToken(uint256 _id) external view returns (address pool);
+  function getUnderlyingToken(uint256 _tokenId)
+    external
+    view
+    returns (address pool);
 
   function getUnderlyingRate(uint256) external returns (uint256);
 
-  function getPositionInfoFromTokenId(uint256 _id)
+  function getPositionInfoFromTokenId(uint256 _tokenId)
     external
     view
     returns (PositionInfo memory info);
