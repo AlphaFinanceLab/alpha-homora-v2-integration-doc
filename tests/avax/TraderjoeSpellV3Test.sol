@@ -134,7 +134,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
         );
     }
 
-    function testIncreasePosition(uint256 positionId) public {
+    function testIncreasePosition(uint256 _positionId) public {
         uint256 amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
         uint256 amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
         uint256 amtLPUser = 100;
@@ -152,7 +152,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
         // call contract
         vm.startPrank(alice);
         integration.increasePosition(
-            positionId,
+            _positionId,
             address(spell),
             TraderJoeSpellV3Integration.AddLiquidityParams(
                 tokenA,
@@ -189,9 +189,9 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
         );
     }
 
-    function testReducePosition(uint256 positionId) public {
+    function testReducePosition(uint256 _positionId) public {
         // get collateral information from position id
-        (, , , uint256 collateralAmount) = bank.getPositionInfo(positionId);
+        (, , , uint256 collateralAmount) = bank.getPositionInfo(_positionId);
 
         uint256 amtLPTake = collateralAmount; // withdraw 100% of position
         uint256 amtLPWithdraw = 100; // return only 100 LP to user
@@ -210,7 +210,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
         vm.startPrank(alice);
         integration.reducePosition(
             address(spell),
-            positionId,
+            _positionId,
             TraderJoeSpellV3Integration.RemoveLiquidityParams(
                 tokenA,
                 tokenB,
@@ -244,13 +244,13 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
         );
     }
 
-    function testHarvestRewards(uint256 positionId) public {
+    function testHarvestRewards(uint256 _positionId) public {
         // increase block timestamp to calculate more rewards
         vm.warp(block.timestamp + 10000);
 
         // query position info from position id
         (, address collateralTokenAddress, , ) = bank.getPositionInfo(
-            positionId
+            _positionId
         );
 
         IWBoostedMasterChefJoeWorker wrapper = IWBoostedMasterChefJoeWorker(
@@ -265,7 +265,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
 
         // call contract
         vm.startPrank(alice);
-        integration.harvestRewards(address(spell), positionId);
+        integration.harvestRewards(address(spell), _positionId);
         vm.stopPrank();
 
         // user info after
@@ -277,12 +277,13 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
         );
     }
 
-    function testGetPendingRewards(uint256 positionId) public {
+    function testGetPendingRewards(uint256 _positionId) public {
         // increase block timestamp to calculate more rewards
         vm.warp(block.timestamp + 10000);
 
         // call contract
-        uint256 pendingRewards = integration.getPendingRewards(positionId);
+        uint256 pendingRewards = integration.getPendingRewards(_positionId);
+        require(pendingRewards > 0, "pending rewards should be more than 0");
 
         console2.log("pendingRewards:", pendingRewards);
     }

@@ -58,4 +58,31 @@ contract Utils is Test {
 
     vm.stopPrank();
   }
+
+  function prepareFundV2(
+    address _user,
+    address[] memory _tokens,
+    address _lp,
+    address _integration
+  ) internal {
+    vm.startPrank(_user, _user);
+
+    // approve tokens
+    for (uint256 i = 0; i < _tokens.length; i++) {
+      IERC20(_tokens[i]).safeApprove(_integration, type(uint256).max);
+    }
+    IERC20(_lp).safeApprove(_integration, type(uint256).max);
+
+    // mint tokens
+    for (uint256 i = 0; i < _tokens.length; i++) {
+      deal(
+        _tokens[i],
+        _user,
+        1_000 * 10**IERC20Metadata(_tokens[i]).decimals()
+      );
+    }
+    deal(_lp, _user, 1000);
+
+    vm.stopPrank();
+  }
 }
