@@ -9,32 +9,53 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensio
 import "forge-std/Test.sol";
 
 contract Utils is Test {
-    using SafeERC20 for IERC20;
+  using SafeERC20 for IERC20;
 
-    uint256 constant alicePk = 0xa11ce;
-    uint256 constant liquidatorPk = 0x110;
-    address payable internal alice = payable(vm.addr(alicePk));
-    address payable internal liquidator = payable(vm.addr(liquidatorPk));
+  uint256 constant alicePk = 0xa11ce;
+  uint256 constant bobPk = 0xb0b;
+  uint256 constant liquidatorPk = 0x110;
+  address payable internal alice = payable(vm.addr(alicePk));
+  address payable internal bob = payable(vm.addr(bobPk));
+  address payable internal liquidator = payable(vm.addr(liquidatorPk));
 
-    function prepareFund(
-        address _user,
-        address _tokenA,
-        address _tokenB,
-        address _lp,
-        address _integration
-    ) internal {
-        vm.startPrank(_user, _user);
+  function prepareFund(
+    address _user,
+    address _tokenA,
+    address _tokenB,
+    address _lp,
+    address _integration
+  ) internal {
+    vm.startPrank(_user, _user);
 
-        // approve tokens
-        IERC20(_tokenA).safeApprove(_integration, type(uint256).max);
-        IERC20(_tokenB).safeApprove(_integration, type(uint256).max);
-        IERC20(_lp).safeApprove(_integration, type(uint256).max);
+    // approve tokens
+    IERC20(_tokenA).safeApprove(_integration, type(uint256).max);
+    IERC20(_tokenB).safeApprove(_integration, type(uint256).max);
+    IERC20(_lp).safeApprove(_integration, type(uint256).max);
 
-        // mint tokens
-        deal(_tokenA, _user, 1_000 * 10**IERC20Metadata(_tokenA).decimals());
-        deal(_tokenB, _user, 1_000 * 10**IERC20Metadata(_tokenB).decimals());
-        deal(_lp, _user, 1000);
+    // mint tokens
+    deal(_tokenA, _user, 1_000 * 10**IERC20Metadata(_tokenA).decimals());
+    deal(_tokenB, _user, 1_000 * 10**IERC20Metadata(_tokenB).decimals());
+    deal(_lp, _user, 1000);
 
-        vm.stopPrank();
-    }
+    vm.stopPrank();
+  }
+
+  function prepareTokens(
+    address _user,
+    address _tokenA,
+    address _tokenB,
+    address _integration
+  ) internal {
+    vm.startPrank(_user, _user);
+
+    // approve tokens
+    IERC20(_tokenA).safeApprove(_integration, type(uint256).max);
+    IERC20(_tokenB).safeApprove(_integration, type(uint256).max);
+
+    // mint tokens
+    deal(_tokenA, _user, 1_000 * 10**IERC20Metadata(_tokenA).decimals());
+    deal(_tokenB, _user, 1_000 * 10**IERC20Metadata(_tokenB).decimals());
+
+    vm.stopPrank();
+  }
 }
