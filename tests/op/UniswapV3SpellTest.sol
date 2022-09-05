@@ -56,7 +56,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
 
     // set whitelist that integration contract can call HomoraBank, otherwise tx will fail
     // NOTE: set whitelist contract must be executed from ALPHA governor
-    setWhitelistContract(bank, alice, address(integration));
+    setWhitelistContractWithTxOrigin(bank, alice, address(integration));
 
     // set credit limit that integration contract can be borrow with uncollateralized loan
     setCreditLimit(
@@ -93,10 +93,10 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     // so integration contract will forward a request to HomoraBank further
 
     // call contract
-    vm.startPrank(alice);
+    vm.startPrank(alice, alice);
     positionId = integration.openPosition(
       address(spell),
-      UniswapV3SpellIntegration.OpenPositionParams(
+      IUniswapV3Spell.OpenPositionParams(
         token0,
         token1,
         fee,
@@ -136,11 +136,11 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     uint256 userBalanceToken1_before = balanceOf(token1, alice);
 
     // call contract
-    vm.startPrank(alice);
+    vm.startPrank(alice, alice);
     integration.increasePosition(
       positionId,
       address(spell),
-      UniswapV3SpellIntegration.AddLiquidityParams(
+      IUniswapV3Spell.AddLiquidityParams(
         1 * 10**IERC20Metadata(token0).decimals(),
         10 * 10**IERC20Metadata(token1).decimals(),
         0,
@@ -180,18 +180,11 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     uint256 userBalanceToken1_before = balanceOf(token1, alice);
 
     // call contract
-    vm.startPrank(alice);
+    vm.startPrank(alice, alice);
     integration.reducePosition(
       address(spell),
       positionId,
-      UniswapV3SpellIntegration.RemoveLiquidityParams(
-        amtLPTake,
-        0,
-        0,
-        0,
-        0,
-        2**256 - 1
-      )
+      IUniswapV3Spell.RemoveLiquidityParams(amtLPTake, 0, 0, 0, 0, 2**256 - 1)
     );
     vm.stopPrank();
 
@@ -229,7 +222,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     uint256 userBalanceToken1_before = balanceOf(token1, alice);
 
     // call contract
-    vm.startPrank(alice);
+    vm.startPrank(alice, alice);
     integration.harvestFee(address(spell), positionId, false);
     vm.stopPrank();
 
@@ -270,11 +263,11 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     uint256 oldLiquidity = posInfo.liquidity;
 
     // call contract
-    vm.startPrank(alice);
+    vm.startPrank(alice, alice);
     integration.reinvest(
       address(spell),
       positionId,
-      UniswapV3SpellIntegration.ReinvestParams(0, 0, false, 0, 0, 2**256 - 1)
+      IUniswapV3Spell.ReinvestParams(0, 0, false, 0, 0, 2**256 - 1)
     );
     vm.stopPrank();
 
@@ -294,11 +287,11 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     uint256 userBalanceToken1_before = balanceOf(token1, alice);
 
     // call contract
-    vm.startPrank(alice);
+    vm.startPrank(alice, alice);
     integration.closePosition(
       address(spell),
       positionId,
-      UniswapV3SpellIntegration.ClosePositionParams(0, 0, 2**256 - 1, false)
+      IUniswapV3Spell.ClosePositionParams(0, 0, 2**256 - 1, false)
     );
     vm.stopPrank();
 
@@ -341,7 +334,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     uint256 userBalanceToken1_before = balanceOf(token1, alice);
 
     // call contract
-    vm.startPrank(alice);
+    vm.startPrank(alice, alice);
     integration.harvestFee(address(spell), positionId, false);
     vm.stopPrank();
 

@@ -41,12 +41,25 @@ contract UtilsOP is Utils {
     return balance;
   }
 
-  function setWhitelistContract(
+  function setWhitelistContract(IBankOP _bank, address _contract) internal {
+    // set whitelist contract call
+    address[] memory _contracts = new address[](1);
+    bool[] memory _statuses = new bool[](1);
+
+    _contracts[0] = _contract;
+    _statuses[0] = true;
+
+    // NOTE: only ALPHA governor can set whitelist contract call
+    vm.prank(_bank.governor());
+    _bank.setWhitelistUsers(_contracts, _statuses);
+  }
+
+  function setWhitelistContractWithTxOrigin(
     IBankOP _bank,
     address _origin,
     address _contract
   ) internal {
-    // set whitelist contract call
+    // set whitelist contract call from tx origin
     address[] memory _contracts = new address[](1);
     address[] memory _origins = new address[](1);
     bool[] memory _statuses = new bool[](1);
@@ -58,10 +71,6 @@ contract UtilsOP is Utils {
     // NOTE: only ALPHA governor can set whitelist contract call
     vm.prank(_bank.governor());
     _bank.setWhitelistContractWithTxOrigin(_contracts, _origins, _statuses);
-
-    // NOTE: only ALPHA executive can set allow contract call
-    vm.prank(_bank.exec());
-    _bank.setAllowContractCalls(true);
   }
 
   function setCreditLimit(

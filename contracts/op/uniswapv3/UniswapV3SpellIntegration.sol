@@ -22,7 +22,7 @@ contract UniswapV3SpellIntegration is BaseIntegration {
 
   IBankOP bank; // homora bank
   IUniswapV3Factory factory; // uniswap v3 factory
-  IUniswapV3PositionManager npm;
+  IUniswapV3PositionManager npm; // uniswap v3 position manager
 
   // openPosition((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,bool,uint256))
   bytes4 openPositionSelector = 0xbd0ce28c;
@@ -42,64 +42,6 @@ contract UniswapV3SpellIntegration is BaseIntegration {
   // reinvest((uint256,uint256,bool,uint256,uint256,uint256))
   bytes4 reinvestSelector = 0x5d12ab7e;
 
-  uint256 constant X128UINT = 2**128;
-
-  struct OpenPositionParams {
-    address token0; // token0 of the pool.
-    address token1; // token1 of the pool.
-    uint24 fee; // pool fee.
-    int24 tickLower; // tickLower
-    int24 tickUpper; // tickUpper
-    uint256 amt0User; // token0 amount that user provides.
-    uint256 amt1User; // token1 amount that user provides.
-    uint256 amt0Borrow; // token0 amount that user borrows.
-    uint256 amt1Borrow; // token1 amount that user borrows.
-    uint256 amt0Min; // minimum amount of token0 being used to provide liquidity.
-    uint256 amt1Min; // minimum amount of token1 being used to provide liquidity.
-    uint256 amtInOptimalSwap; // amount of tokens being used in swap for optimal deposit.
-    uint256 amtOutMinOptimalSwap; // expected amount out for optimal deposit.
-    bool isZeroForOneSwap; // do we swap token0 to token1 for optimal deposit.
-    uint256 deadline; // deadline for increaseLiquidity and swap.
-  }
-
-  struct AddLiquidityParams {
-    uint256 amt0User; // token0 amount that user provides.
-    uint256 amt1User; // token1 amount that user provides.
-    uint256 amt0Borrow; // token0 amount that user borrows.
-    uint256 amt1Borrow; // token1 amount that user borrows.
-    uint256 amt0Min; // minimum amount of token0 being used to provide liquidity.
-    uint256 amt1Min; // minimum amount of token1 being used to provide liquidity.
-    uint256 amtInOptimalSwap; // amount of tokens being used in swap for optimal deposit.
-    uint256 amtOutMinOptimalSwap; // expected amount out for optimal deposit.
-    bool isZeroForOneSwap; // do we swap token0 to token1 for optimal deposit.
-    uint256 deadline; // deadline for increaseLiquidity and swap.
-  }
-
-  struct RemoveLiquidityParams {
-    uint256 amtLiquidityTake; // amount of liquidity being removed.
-    uint256 amt0Repay; // repay amount of token0.
-    uint256 amt1Repay; // repay amount of token1.
-    uint256 amt0Min; // minimum amount of token0 gain after remove liquidity and repay debt.
-    uint256 amt1Min; // minimum amount of token1 gain after remove liquidity and repay debt.
-    uint256 deadline; // deadline for decreaseLiquidity.
-  }
-
-  struct ClosePositionParams {
-    uint256 amt0Min; // minimum amount of token0 gain after remove liquidity and repay debt.
-    uint256 amt1Min; // minimum amount of token1 gain after remove liquidity and repay debt.
-    uint256 deadline; // deadline for decreaseLiquidity.
-    bool convertWETH; // deadline for decreaseLiquidity.
-  }
-
-  struct ReinvestParams {
-    uint256 amtInOptimalSwap; // amount of tokens being used in swap for optimal deposit.
-    uint256 amtOutMinOptimalSwap; // expected amount out for optimal deposit.
-    bool isZeroForOneSwap; // do we swap token0 to token1 for optimal deposit.
-    uint256 amt0Min; // minimum amount of token0 being used to provide liquidity.
-    uint256 amt1Min; // minimum amount of token1 being used to provide liquidity.
-    uint256 deadline; // deadline for increaseLiquidity.
-  }
-
   constructor(
     IBankOP _bank,
     IUniswapV3Factory _factory,
@@ -110,63 +52,44 @@ contract UniswapV3SpellIntegration is BaseIntegration {
     npm = _npm;
   }
 
-  function openPosition(address spell, OpenPositionParams memory params)
-    external
-    returns (uint256 positionId)
-  {
+  function openPosition(
+    address _spell,
+    IUniswapV3Spell.OpenPositionParams memory _params
+  ) external returns (uint256 positionId) {
     // approve tokens
-    ensureApprove(params.token0, address(bank));
-    ensureApprove(params.token1, address(bank));
+    ensureApprove(_params.token0, address(bank));
+    ensureApprove(_params.token1, address(bank));
 
     // transfer tokens from user
-    IERC20(params.token0).safeTransferFrom(
+    IERC20(_params.token0).safeTransferFrom(
       msg.sender,
       address(this),
-      params.amt0User
+      _params.amt0User
     );
-    IERC20(params.token1).safeTransferFrom(
+    IERC20(_params.token1).safeTransferFrom(
       msg.sender,
       address(this),
-      params.amt1User
+      _params.amt1User
     );
 
     positionId = bank.execute(
       0, // (0 is reserved for opening new position)
-      spell,
-      abi.encodeWithSelector(
-        openPositionSelector,
-        IUniswapV3Spell.OpenPositionParams(
-          params.token0,
-          params.token1,
-          params.fee,
-          params.tickLower,
-          params.tickUpper,
-          params.amt0User,
-          params.amt1User,
-          params.amt0Borrow,
-          params.amt1Borrow,
-          params.amt0Min,
-          params.amt1Min,
-          params.amtInOptimalSwap,
-          params.amtOutMinOptimalSwap,
-          params.isZeroForOneSwap,
-          params.deadline
-        )
-      )
+      _spell,
+      abi.encodeWithSelector(openPositionSelector, _params)
     );
 
     doRefundETH();
-    doRefund(params.token0);
-    doRefund(params.token1);
+    doRefund(_params.token0);
+    doRefund(_params.token1);
   }
 
   function increasePosition(
-    uint256 positionId,
-    address spell,
-    AddLiquidityParams memory params
+    uint256 _positionId,
+    address _spell,
+    IUniswapV3Spell.AddLiquidityParams memory _params
   ) external {
     (, address collateralTokenAddress, uint256 collateralTokenId, ) = bank
-      .getPositionInfo(positionId);
+      .getPositionInfo(_positionId);
     IWUniswapV3Position wrapper = IWUniswapV3Position(collateralTokenAddress);
 
     IWUniswapV3Position.PositionInfo memory posInfo = wrapper
@@ -180,31 +103,17 @@ contract UniswapV3SpellIntegration is BaseIntegration {
     IERC20(posInfo.token0).safeTransferFrom(
       msg.sender,
       address(this),
-      params.amt0User
+      _params.amt0User
     );
     IERC20(posInfo.token1).safeTransferFrom(
       msg.sender,
       address(this),
-      params.amt1User
+      _params.amt1User
     );
     bank.execute(
-      positionId,
-      spell,
-      abi.encodeWithSelector(
-        addLiquiditySelector,
-        IUniswapV3Spell.AddLiquidityParams(
-          params.amt0User,
-          params.amt1User,
-          params.amt0Borrow,
-          params.amt1Borrow,
-          params.amt0Min,
-          params.amt1Min,
-          params.amtInOptimalSwap,
-          params.amtOutMinOptimalSwap,
-          params.isZeroForOneSwap,
-          params.deadline
-        )
-      )
+      _positionId,
+      _spell,
+      abi.encodeWithSelector(addLiquiditySelector, _params)
     );
 
     doRefundETH();
@@ -213,31 +122,21 @@ contract UniswapV3SpellIntegration is BaseIntegration {
   }
 
   function reducePosition(
-    address spell,
-    uint256 positionId,
-    RemoveLiquidityParams memory params
+    address _spell,
+    uint256 _positionId,
+    IUniswapV3Spell.RemoveLiquidityParams memory _params
   ) external {
     (, address collateralTokenAddress, uint256 collateralTokenId, ) = bank
-      .getPositionInfo(positionId);
+      .getPositionInfo(_positionId);
     IWUniswapV3Position wrapper = IWUniswapV3Position(collateralTokenAddress);
 
     IWUniswapV3Position.PositionInfo memory posInfo = wrapper
       .getPositionInfoFromTokenId(collateralTokenId);
 
     bank.execute(
-      positionId,
-      spell,
-      abi.encodeWithSelector(
-        removeLiquiditySelector,
-        IUniswapV3Spell.RemoveLiquidityParams(
-          params.amtLiquidityTake,
-          params.amt0Repay,
-          params.amt1Repay,
-          params.amt0Min,
-          params.amt1Min,
-          params.deadline
-        )
-      )
+      _positionId,
+      _spell,
+      abi.encodeWithSelector(removeLiquiditySelector, _params)
     );
 
     doRefundETH();
@@ -246,19 +145,19 @@ contract UniswapV3SpellIntegration is BaseIntegration {
   }
 
   function harvestFee(
-    address spell,
-    uint256 positionId,
-    bool convertWETH
+    address _spell,
+    uint256 _positionId,
+    bool _convertWETH
   ) external {
     bank.execute(
-      positionId,
-      spell,
-      abi.encodeWithSelector(harvestFeeSelector, convertWETH)
+      _positionId,
+      _spell,
+      abi.encodeWithSelector(harvestFeeSelector, _convertWETH)
     );
 
     // query position info from position id
     (, address collateralTokenAddress, uint256 collateralTokenId, ) = bank
-      .getPositionInfo(positionId);
+      .getPositionInfo(_positionId);
 
     IWUniswapV3Position wrapper = IWUniswapV3Position(collateralTokenAddress);
     IWUniswapV3Position.PositionInfo memory posInfo = wrapper
@@ -270,29 +169,21 @@ contract UniswapV3SpellIntegration is BaseIntegration {
   }
 
   function closePosition(
-    address spell,
-    uint256 positionId,
-    ClosePositionParams memory params
+    address _spell,
+    uint256 _positionId,
+    IUniswapV3Spell.ClosePositionParams memory _params
   ) external {
     (, address collateralTokenAddress, uint256 collateralId, ) = bank
-      .getPositionInfo(positionId);
+      .getPositionInfo(_positionId);
     IWUniswapV3Position wrapper = IWUniswapV3Position(collateralTokenAddress);
 
     IWUniswapV3Position.PositionInfo memory posInfo = wrapper
       .getPositionInfoFromTokenId(collateralId);
 
     bank.execute(
-      positionId,
-      spell,
-      abi.encodeWithSelector(
-        closePositionSelector,
-        IUniswapV3Spell.ClosePositionParams(
-          params.amt0Min,
-          params.amt1Min,
-          params.deadline,
-          params.convertWETH
-        )
-      )
+      _positionId,
+      _spell,
+      abi.encodeWithSelector(closePositionSelector, _params)
     );
     doRefundETH();
     doRefund(posInfo.token0);
@@ -300,31 +191,21 @@ contract UniswapV3SpellIntegration is BaseIntegration {
   }
 
   function reinvest(
-    address spell,
-    uint256 positionId,
-    ReinvestParams memory params
+    address _spell,
+    uint256 _positionId,
+    IUniswapV3Spell.ReinvestParams memory _params
   ) external {
     (, address collateralTokenAddress, uint256 collateralId, ) = bank
-      .getPositionInfo(positionId);
+      .getPositionInfo(_positionId);
     IWUniswapV3Position wrapper = IWUniswapV3Position(collateralTokenAddress);
 
     IWUniswapV3Position.PositionInfo memory posInfo = wrapper
       .getPositionInfoFromTokenId(collateralId);
 
     bank.execute(
-      positionId,
-      spell,
-      abi.encodeWithSelector(
-        reinvestSelector,
-        IUniswapV3Spell.ReinvestParams(
-          params.amtInOptimalSwap,
-          params.amtOutMinOptimalSwap,
-          params.isZeroForOneSwap,
-          params.amt0Min,
-          params.amt1Min,
-          params.deadline
-        )
-      )
+      _positionId,
+      _spell,
+      abi.encodeWithSelector(reinvestSelector, _params)
     );
 
     doRefundETH();
@@ -332,40 +213,33 @@ contract UniswapV3SpellIntegration is BaseIntegration {
     doRefund(posInfo.token1);
   }
 
-  struct FeeGrowth {
-    uint256 feeGrowthBelow0;
-    uint256 feeGrowthBelow1;
-    uint256 feeGrowthAbove0;
-    uint256 feeGrowthAbove1;
-  }
-
-  // ref: from arrakis finance
+  // ref: from arrakis finance: https://github.com/ArrakisFinance/vault-v1-core/blob/main/contracts/ArrakisVaultV1.sol
   function _computeFeesEarned(
-    IUniswapV3Pool pool,
-    bool isZero,
-    uint256 feeGrowthInsideLast,
-    int24 tick,
-    int24 lowerTick,
-    int24 upperTick,
-    uint128 liquidity
+    IUniswapV3Pool _pool,
+    bool _isZero,
+    uint256 _feeGrowthInsideLast,
+    int24 _tick,
+    int24 _lowerTick,
+    int24 _upperTick,
+    uint128 _liquidity
   ) private view returns (uint256 fee) {
     uint256 feeGrowthOutsideLower;
     uint256 feeGrowthOutsideUpper;
     uint256 feeGrowthGlobal;
-    if (isZero) {
-      feeGrowthGlobal = pool.feeGrowthGlobal0X128();
-      (, , feeGrowthOutsideLower, , , , , ) = pool.ticks(lowerTick);
-      (, , feeGrowthOutsideUpper, , , , , ) = pool.ticks(upperTick);
+    if (_isZero) {
+      feeGrowthGlobal = _pool.feeGrowthGlobal0X128();
+      (, , feeGrowthOutsideLower, , , , , ) = _pool.ticks(_lowerTick);
+      (, , feeGrowthOutsideUpper, , , , , ) = _pool.ticks(_upperTick);
     } else {
-      feeGrowthGlobal = pool.feeGrowthGlobal1X128();
-      (, , , feeGrowthOutsideLower, , , , ) = pool.ticks(lowerTick);
-      (, , , feeGrowthOutsideUpper, , , , ) = pool.ticks(upperTick);
+      feeGrowthGlobal = _pool.feeGrowthGlobal1X128();
+      (, , , feeGrowthOutsideLower, , , , ) = _pool.ticks(_lowerTick);
+      (, , , feeGrowthOutsideUpper, , , , ) = _pool.ticks(_upperTick);
     }
 
     unchecked {
       // calculate fee growth below
       uint256 feeGrowthBelow;
-      if (tick >= lowerTick) {
+      if (_tick >= _lowerTick) {
         feeGrowthBelow = feeGrowthOutsideLower;
       } else {
         feeGrowthBelow = feeGrowthGlobal - feeGrowthOutsideLower;
@@ -373,7 +247,7 @@ contract UniswapV3SpellIntegration is BaseIntegration {
 
       // calculate fee growth above
       uint256 feeGrowthAbove;
-      if (tick < upperTick) {
+      if (_tick < _upperTick) {
         feeGrowthAbove = feeGrowthOutsideUpper;
       } else {
         feeGrowthAbove = feeGrowthGlobal - feeGrowthOutsideUpper;
@@ -382,19 +256,19 @@ contract UniswapV3SpellIntegration is BaseIntegration {
       uint256 feeGrowthInside = feeGrowthGlobal -
         feeGrowthBelow -
         feeGrowthAbove;
-      fee = (liquidity * (feeGrowthInside - feeGrowthInsideLast)) / 2**128;
+      fee = (_liquidity * (feeGrowthInside - _feeGrowthInsideLast)) / 2**128;
     }
   }
 
   function _getPositionID(
-    address owner,
-    int24 lowerTick,
-    int24 upperTick
+    address _owner,
+    int24 _lowerTick,
+    int24 _upperTick
   ) internal view returns (bytes32 positionId) {
-    return keccak256(abi.encodePacked(owner, lowerTick, upperTick));
+    return keccak256(abi.encodePacked(_owner, _lowerTick, _upperTick));
   }
 
-  function getPendingFees(uint256 positionId)
+  function getPendingFees(uint256 _positionId)
     external
     returns (uint256 feeAmt0, uint256 feeAmt1)
   {
@@ -408,7 +282,7 @@ contract UniswapV3SpellIntegration is BaseIntegration {
     {
       // query position info from position id
       (, collateralTokenAddress, collateralTokenId, collateralAmount) = bank
-        .getPositionInfo(positionId);
+        .getPositionInfo(_positionId);
 
       wrapper = IWUniswapV3Position(collateralTokenAddress);
 
