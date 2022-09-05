@@ -246,11 +246,7 @@ contract TraderJoeSpellV3Integration is BaseIntegration {
             collateralId
         );
         uint256 endTokenPerShare = wrapper.accJoePerShare();
-        IBoostedMasterChefJoe.UserInfo memory userInfo = chef.userInfo(
-            pid,
-            address(wrapper)
-        );
-        uint256 totalSupply = userInfo.amount; // total lp from wrapper deposited in Chef
+        (uint256 totalSupply, , ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
 
         // pending rewards separates into two parts
         // 1. pending rewards that are in the wrapper contract
