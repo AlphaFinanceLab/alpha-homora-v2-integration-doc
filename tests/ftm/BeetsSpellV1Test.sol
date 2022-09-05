@@ -70,16 +70,16 @@ contract BeetsSpellV1Test is UtilsFTM {
 
     function testAll() public {
         uint256 positionId = testOpenPosition();
-        // testIncreasePosition(positionId);
-        // testGetPendingRewards(positionId);
+        testIncreasePosition(positionId);
+        testGetPendingRewards(positionId);
         testHarvestRewards(positionId);
-        // testReducePosition(positionId);
+        testReducePosition(positionId);
     }
 
     function testOpenPosition() public returns (uint256 positionId) {
         uint256[] memory amtsUser = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
-            amtsUser[i] = 10 * 10**IERC20Metadata(tokens[i]).decimals();
+            amtsUser[i] = (10 * 10**IERC20Metadata(tokens[i]).decimals());
         }
 
         uint256 amtLPUser = 100;
@@ -264,8 +264,8 @@ contract BeetsSpellV1Test is UtilsFTM {
     }
 
     function testHarvestRewards(uint256 _positionId) public {
-        // increase block timestamp to calculate more rewards
-        vm.warp(block.timestamp + 10000);
+        // increase block number to calculate more rewards
+        vm.roll(block.number + 10000);
 
         // query position info from position id
         (, address collateralTokenAddress, , ) = bank.getPositionInfo(
@@ -290,29 +290,20 @@ contract BeetsSpellV1Test is UtilsFTM {
         // user info after
         uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
 
-        address beetChef = 0x8166994d9ebBe5829EC86Bd81258149B87faCfd3;
-        uint256 beetBalance = IERC20(rewardToken).balanceOf(beetChef);
-
-        console2.log("rewardToken");
-        console2.log(rewardToken);
-        console2.log("beetBalance");
-        console2.log(beetBalance);
-        console2.log("wrapper.chef()");
-        console2.log(address(wrapper.chef()));
         require(
             userBalanceReward_after > userBalanceReward_before,
             "incorrect user balance of reward token"
         );
     }
 
-    // function testGetPendingRewards(uint256 _positionId) public {
-    //     // increase block timestamp to calculate more rewards
-    //     vm.warp(block.timestamp + 10000);
+    function testGetPendingRewards(uint256 _positionId) public {
+        // increase block number to calculate more rewards
+        vm.roll(block.number + 10000);
 
-    //     // call contract
-    //     uint256 pendingRewards = integration.getPendingRewards(_positionId);
-    //     require(pendingRewards > 0, "pending rewards should be more than 0");
+        // call contract
+        uint256 pendingRewards = integration.getPendingRewards(_positionId);
+        require(pendingRewards > 0, "pending rewards should be more than 0");
 
-    //     console2.log("pendingRewards:", pendingRewards);
-    // }
+        console2.log("pendingRewards:", pendingRewards);
+    }
 }
