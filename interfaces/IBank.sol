@@ -77,11 +77,6 @@ interface IBank is IGovernable {
   /// @dev Return worker address to withdraw reserve.
   function worker() external returns (address);
 
-  /// @dev Return whether `msgSender` can call HomoraBank by `origin` address
-  function whitelistedContractWithTxOrigin(address msgSender, address origin)
-    external
-    returns (bool);
-
   /// @dev Return exec address.
   function exec() external returns (address);
 
