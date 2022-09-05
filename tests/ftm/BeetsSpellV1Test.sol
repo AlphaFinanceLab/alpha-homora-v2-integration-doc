@@ -140,6 +140,21 @@ contract BeetsSpellV1Test is UtilsFTM {
     }
 
     function testIncreasePosition(uint256 _positionId) public {
+        // increase block number to calculate more rewards
+        vm.roll(block.number + 10000);
+
+        // get collateral information from position id
+        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
+            _positionId
+        );
+
+        IWMasterChefBeetsWorker wrapper = IWMasterChefBeetsWorker(
+            collateralTokenAddress
+        );
+
+        // find reward token address
+        address rewardToken = address(wrapper.rewardToken());
+
         uint256[] memory amtsUser = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
             amtsUser[i] = 1 * 10**IERC20Metadata(tokens[i]).decimals();
@@ -163,6 +178,7 @@ contract BeetsSpellV1Test is UtilsFTM {
             userBalanceTokens_before[i] = balanceOf(tokens[i], alice);
         }
         uint256 userBalanceLP_before = balanceOf(lp, alice);
+        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
 
         // call contract
         vm.startPrank(alice);
@@ -187,6 +203,7 @@ contract BeetsSpellV1Test is UtilsFTM {
             userBalanceTokens_after[i] = balanceOf(tokens[i], alice);
         }
         uint256 userBalanceLP_after = balanceOf(lp, alice);
+        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
 
         for (uint256 i = 0; i < tokens.length; i++) {
             require(
@@ -197,6 +214,10 @@ contract BeetsSpellV1Test is UtilsFTM {
         require(
             userBalanceLP_before > userBalanceLP_after,
             "incorrect user balance of lp"
+        );
+        require(
+            userBalanceReward_after > userBalanceReward_before,
+            "incorrect user balance of reward token"
         );
     }
 
@@ -238,7 +259,7 @@ contract BeetsSpellV1Test is UtilsFTM {
             userBalanceTokens_before[i] = balanceOf(tokens[i], alice);
         }
         uint256 userBalanceLP_before = balanceOf(lp, alice);
-        uint256 userBalanceRewardToken_before = balanceOf(rewardToken, alice);
+        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
 
         // call contract
         vm.startPrank(alice);
@@ -262,7 +283,7 @@ contract BeetsSpellV1Test is UtilsFTM {
             userBalanceTokens_after[i] = balanceOf(tokens[i], alice);
         }
         uint256 userBalanceLP_after = balanceOf(lp, alice);
-        uint256 userBalanceRewardToken_after = balanceOf(rewardToken, alice);
+        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
 
         for (uint256 i = 0; i < tokens.length; i++) {
             require(
@@ -275,7 +296,7 @@ contract BeetsSpellV1Test is UtilsFTM {
             "incorrect user balance of LP"
         );
         require(
-            userBalanceRewardToken_after > userBalanceRewardToken_before,
+            userBalanceReward_after > userBalanceReward_before,
             "incorrect user balance of reward token"
         );
     }

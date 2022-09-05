@@ -116,6 +116,7 @@ contract BeetsSpellV1Integration is BaseIntegration {
         (address[] memory tokens, address lp) = getPoolTokensAndLp(
             _params.poolId
         );
+        address rewardToken = getRewardToken(_positionId);
 
         // approve tokens
         for (uint256 i = 0; i < tokens.length; i++) {
@@ -159,6 +160,7 @@ contract BeetsSpellV1Integration is BaseIntegration {
             doRefund(tokens[i]);
         }
         doRefund(lp);
+        doRefund(rewardToken);
     }
 
     function reducePosition(
@@ -169,7 +171,6 @@ contract BeetsSpellV1Integration is BaseIntegration {
         (address[] memory tokens, address lp) = getPoolTokensAndLp(
             _params.poolId
         );
-
         address rewardToken = getRewardToken(_positionId);
 
         bank.execute(
