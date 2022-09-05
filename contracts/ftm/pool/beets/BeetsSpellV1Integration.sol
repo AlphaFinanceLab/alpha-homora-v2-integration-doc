@@ -170,6 +170,8 @@ contract BeetsSpellV1Integration is BaseIntegration {
             _params.poolId
         );
 
+        address rewardToken = getRewardToken(_positionId);
+
         bank.execute(
             _positionId,
             _spell,
@@ -191,8 +193,7 @@ contract BeetsSpellV1Integration is BaseIntegration {
             doRefund(tokens[i]);
         }
         doRefund(lp);
-
-        // todo: return reward token
+        doRefund(rewardToken);
     }
 
     function harvestRewards(address _spell, uint256 _positionId) external {
@@ -202,17 +203,7 @@ contract BeetsSpellV1Integration is BaseIntegration {
             abi.encodeWithSelector(harvestRewardsSelector)
         );
 
-        // query position info from position id
-        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
-            _positionId
-        );
-
-        IWMasterChefBeetsWorker wrapper = IWMasterChefBeetsWorker(
-            collateralTokenAddress
-        );
-
-        // find reward token address from wrapper
-        address rewardToken = address(wrapper.rewardToken());
+        address rewardToken = getRewardToken(_positionId);
 
         doRefund(rewardToken);
     }
@@ -273,5 +264,23 @@ contract BeetsSpellV1Integration is BaseIntegration {
     {
         (lp, ) = vault.getPool(_poolId);
         (tokens, , ) = vault.getPoolTokens(_poolId);
+    }
+
+    function getRewardToken(uint256 _positionId)
+        internal
+        view
+        returns (address rewardToken)
+    {
+        // get collateral information from position id
+        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
+            _positionId
+        );
+
+        IWMasterChefBeetsWorker wrapper = IWMasterChefBeetsWorker(
+            collateralTokenAddress
+        );
+
+        // find reward token address
+        rewardToken = address(wrapper.rewardToken());
     }
 }
