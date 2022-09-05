@@ -124,6 +124,16 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
     }
 
     function testIncreasePosition(uint256 _positionId) public {
+        // get collateral information from position id
+        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
+            _positionId
+        );
+
+        IWMasterChefSpirit wrapper = IWMasterChefSpirit(collateralTokenAddress);
+
+        // find reward token address
+        address rewardToken = address(wrapper.rewardToken());
+
         uint256 amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
         uint256 amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
         uint256 amtLPUser = 100;
@@ -137,6 +147,7 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
         uint256 userBalanceTokenA_before = balanceOf(tokenA, alice);
         uint256 userBalanceTokenB_before = balanceOf(tokenB, alice);
         uint256 userBalanceLP_before = balanceOf(lp, alice);
+        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
 
         // call contract
         vm.startPrank(alice);
@@ -163,6 +174,7 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
         uint256 userBalanceTokenA_after = balanceOf(tokenA, alice);
         uint256 userBalanceTokenB_after = balanceOf(tokenB, alice);
         uint256 userBalanceLP_after = balanceOf(lp, alice);
+        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
 
         require(
             userBalanceTokenA_before > userBalanceTokenA_after,
@@ -176,11 +188,22 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
             userBalanceLP_before > userBalanceLP_after,
             "incorrect user balance of lp"
         );
+        // NOTE: no rewards returned since SpiritSwapV1 pools have been migrated to new version already
+        require(
+            userBalanceReward_after == userBalanceReward_before,
+            "incorrect user balance of reward token"
+        );
     }
 
     function testReducePosition(uint256 _positionId) public {
         // get collateral information from position id
-        (, , , uint256 collateralAmount) = bank.getPositionInfo(_positionId);
+        (, address collateralTokenAddress, , uint256 collateralAmount) = bank
+            .getPositionInfo(_positionId);
+
+        IWMasterChefSpirit wrapper = IWMasterChefSpirit(collateralTokenAddress);
+
+        // find reward token address
+        address rewardToken = address(wrapper.rewardToken());
 
         uint256 amtLPTake = collateralAmount; // withdraw 100% of position
         uint256 amtLPWithdraw = 100; // return only 100 LP to user
@@ -194,6 +217,7 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
         uint256 userBalanceTokenA_before = balanceOf(tokenA, alice);
         uint256 userBalanceTokenB_before = balanceOf(tokenB, alice);
         uint256 userBalanceLP_before = balanceOf(lp, alice);
+        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
 
         // call contract
         vm.startPrank(alice);
@@ -218,6 +242,7 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
         uint256 userBalanceTokenA_after = balanceOf(tokenA, alice);
         uint256 userBalanceTokenB_after = balanceOf(tokenB, alice);
         uint256 userBalanceLP_after = balanceOf(lp, alice);
+        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
 
         require(
             userBalanceTokenA_after > userBalanceTokenA_before,
@@ -230,6 +255,11 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
         require(
             userBalanceLP_after - userBalanceLP_before == amtLPWithdraw,
             "incorrect user balance of LP"
+        );
+        // NOTE: no rewards returned since SpiritSwapV1 pools have been migrated to new version already
+        require(
+            userBalanceReward_after == userBalanceReward_before,
+            "incorrect user balance of reward token"
         );
     }
 

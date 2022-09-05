@@ -124,6 +124,7 @@ contract TraderJoeSpellV3Integration is BaseIntegration {
         AddLiquidityParams memory _params
     ) external {
         address lp = factory.getPair(_params.tokenA, _params.tokenB);
+        address rewardToken = getRewardToken(_positionId);
 
         // approve tokens
         ensureApprove(_params.tokenA, address(bank));
@@ -172,6 +173,7 @@ contract TraderJoeSpellV3Integration is BaseIntegration {
         doRefund(_params.tokenA);
         doRefund(_params.tokenB);
         doRefund(lp);
+        doRefund(rewardToken);
     }
 
     function reducePosition(
@@ -180,6 +182,7 @@ contract TraderJoeSpellV3Integration is BaseIntegration {
         RemoveLiquidityParams memory _params
     ) external {
         address lp = factory.getPair(_params.tokenA, _params.tokenB);
+        address rewardToken = getRewardToken(_positionId);
 
         bank.execute(
             _positionId,
@@ -204,6 +207,7 @@ contract TraderJoeSpellV3Integration is BaseIntegration {
         doRefund(_params.tokenA);
         doRefund(_params.tokenB);
         doRefund(lp);
+        doRefund(rewardToken);
     }
 
     function harvestRewards(address _spell, uint256 _positionId) external {
@@ -213,17 +217,8 @@ contract TraderJoeSpellV3Integration is BaseIntegration {
             abi.encodeWithSelector(harvestRewardsSelector)
         );
 
-        // query position info from position id
-        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
-            _positionId
-        );
-
-        IWBoostedMasterChefJoeWorker wrapper = IWBoostedMasterChefJoeWorker(
-            collateralTokenAddress
-        );
-
         // find reward token address from wrapper
-        address rewardToken = address(wrapper.joe());
+        address rewardToken = getRewardToken(_positionId);
 
         doRefund(rewardToken);
     }
@@ -279,5 +274,23 @@ contract TraderJoeSpellV3Integration is BaseIntegration {
         pendingRewards =
             userPendingRewardsFromWrapper +
             userPendingRewardFromChef;
+    }
+
+    function getRewardToken(uint256 _positionId)
+        internal
+        view
+        returns (address rewardToken)
+    {
+        // query position info from position id
+        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
+            _positionId
+        );
+
+        IWBoostedMasterChefJoeWorker wrapper = IWBoostedMasterChefJoeWorker(
+            collateralTokenAddress
+        );
+
+        // find reward token address from wrapper
+        rewardToken = address(wrapper.joe());
     }
 }

@@ -137,6 +137,19 @@ contract PangolinSpellV2Test is UtilsAVAX {
     }
 
     function testIncreasePosition(uint256 _positionId) public {
+        // increase block timestamp to calculate more rewards
+        vm.warp(block.timestamp + 1000);
+
+        // get collateral information from position id
+        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
+            _positionId
+        );
+
+        IWMiniChefV2PNG wrapper = IWMiniChefV2PNG(collateralTokenAddress);
+
+        // find reward token address
+        address rewardToken = address(wrapper.png());
+
         uint256 amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
         uint256 amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
         uint256 amtLPUser = 100;
@@ -150,6 +163,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
         uint256 userBalanceTokenA_before = balanceOf(tokenA, alice);
         uint256 userBalanceTokenB_before = balanceOf(tokenB, alice);
         uint256 userBalanceLP_before = balanceOf(lp, alice);
+        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
 
         // call contract
         vm.startPrank(alice);
@@ -176,6 +190,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
         uint256 userBalanceTokenA_after = balanceOf(tokenA, alice);
         uint256 userBalanceTokenB_after = balanceOf(tokenB, alice);
         uint256 userBalanceLP_after = balanceOf(lp, alice);
+        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
 
         require(
             userBalanceTokenA_before > userBalanceTokenA_after,
@@ -189,11 +204,24 @@ contract PangolinSpellV2Test is UtilsAVAX {
             userBalanceLP_before > userBalanceLP_after,
             "incorrect user balance of lp"
         );
+        require(
+            userBalanceReward_after > userBalanceReward_before,
+            "incorrect user balance of reward token"
+        );
     }
 
     function testReducePosition(uint256 _positionId) public {
+        // increase block timestamp to calculate more rewards
+        vm.warp(block.timestamp + 1000);
+
         // get collateral information from position id
-        (, , , uint256 collateralAmount) = bank.getPositionInfo(_positionId);
+        (, address collateralTokenAddress, , uint256 collateralAmount) = bank
+            .getPositionInfo(_positionId);
+
+        IWMiniChefV2PNG wrapper = IWMiniChefV2PNG(collateralTokenAddress);
+
+        // find reward token address
+        address rewardToken = address(wrapper.png());
 
         uint256 amtLPTake = collateralAmount; // withdraw 100% of position
         uint256 amtLPWithdraw = 100; // return only 100 LP to user
@@ -207,6 +235,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
         uint256 userBalanceTokenA_before = balanceOf(tokenA, alice);
         uint256 userBalanceTokenB_before = balanceOf(tokenB, alice);
         uint256 userBalanceLP_before = balanceOf(lp, alice);
+        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
 
         // call contract
         vm.startPrank(alice);
@@ -231,6 +260,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
         uint256 userBalanceTokenA_after = balanceOf(tokenA, alice);
         uint256 userBalanceTokenB_after = balanceOf(tokenB, alice);
         uint256 userBalanceLP_after = balanceOf(lp, alice);
+        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
 
         require(
             userBalanceTokenA_after > userBalanceTokenA_before,
@@ -244,11 +274,15 @@ contract PangolinSpellV2Test is UtilsAVAX {
             userBalanceLP_after - userBalanceLP_before == amtLPWithdraw,
             "incorrect user balance of LP"
         );
+        require(
+            userBalanceReward_after > userBalanceReward_before,
+            "incorrect user balance of reward token"
+        );
     }
 
     function testHarvestRewards(uint256 _positionId) public {
         // increase block timestamp to calculate more rewards
-        vm.warp(block.timestamp + 10000);
+        vm.warp(block.timestamp + 1000);
 
         // query position info from position id
         (, address collateralTokenAddress, , ) = bank.getPositionInfo(
@@ -279,7 +313,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
 
     function testGetPendingRewards(uint256 _positionId) public {
         // increase block timestamp to calculate more rewards
-        vm.warp(block.timestamp + 10000);
+        vm.warp(block.timestamp + 1000);
 
         // assume someone interacts Chef -> makes pending reward updated
         (, address collateralTokenAddress, , ) = bank.getPositionInfo(
