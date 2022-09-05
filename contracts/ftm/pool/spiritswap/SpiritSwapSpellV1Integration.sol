@@ -236,27 +236,45 @@ contract SpiritSwapSpellV1Integration is BaseIntegration {
         returns (uint256 pendingRewards)
     {
         // query position info from position id
-        (, address collateralTokenAddress, uint256 collateralId, ) = bank
-            .getPositionInfo(_positionId);
+        (
+            ,
+            address collateralTokenAddress,
+            uint256 collateralId,
+            uint256 collateralAmount
+        ) = bank.getPositionInfo(_positionId);
 
         IWMasterChefSpirit wrapper = IWMasterChefSpirit(collateralTokenAddress);
         IMasterChefSpirit chef = IMasterChefSpirit(wrapper.chef());
 
         // get info for calculating rewards
-        (uint256 pid, uint256 startRewardTokenPerShare) = wrapper.decodeId(
+        (uint256 pid, uint256 startTokenPerShare) = wrapper.decodeId(
             collateralId
         );
-        (, , , uint256 endRewardTokenPerShare, ) = chef.poolInfo(pid);
+        (, , , uint256 endTokenPerShare, ) = chef.poolInfo(pid);
         (uint256 totalSupply, ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
 
-        // calculate pending rewards
-        uint256 PRECISION = 1e12;
-        uint256 stReward = (startRewardTokenPerShare * totalSupply).divCeil(
+        // pending rewards separates into two parts
+        // 1. pending rewards that are in the wrapper contract
+        uint256 PRECISION = 10**12;
+        uint256 stReward = (startTokenPerShare * collateralAmount).divCeil(
             PRECISION
         );
-        uint256 enReward = (endRewardTokenPerShare * totalSupply) / PRECISION;
+        uint256 enReward = (endTokenPerShare * collateralAmount) / PRECISION;
+        uint256 userPendingRewardsFromWrapper = (enReward > stReward)
+            ? enReward - stReward
+            : 0;
 
-        pendingRewards = (enReward > stReward) ? enReward - stReward : 0;
+        // 2. pending rewards that wrapper hasn't claimed from Chef's contract
+        uint256 pendingRewardFromChef = chef.pendingSpirit(
+            pid,
+            address(wrapper)
+        );
+        uint256 userPendingRewardFromChef = (collateralAmount *
+            pendingRewardFromChef) / totalSupply;
+
+        pendingRewards =
+            userPendingRewardsFromWrapper +
+            userPendingRewardFromChef;
     }
 
     function getRewardToken(uint256 _positionId)
