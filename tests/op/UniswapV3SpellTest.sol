@@ -102,16 +102,16 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
         fee,
         -206710,
         -198590,
-        10**18,
-        500 * 10**6,
-        1 * 10**17,
-        100 * 10**6,
+        10**IERC20Metadata(token0).decimals(),
+        500 * 10**IERC20Metadata(token1).decimals(),
+        10**IERC20Metadata(token0).decimals() / 10,
+        100 * 10**IERC20Metadata(token1).decimals(),
         0,
         0,
         0,
         0,
         false,
-        2**256 - 1
+        type(uint256).max
       )
     );
     vm.stopPrank();
@@ -150,7 +150,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
         0,
         0,
         false,
-        2**256 - 1
+        type(uint256).max
       )
     );
     vm.stopPrank();
@@ -184,7 +184,14 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     integration.reducePosition(
       address(spell),
       positionId,
-      IUniswapV3Spell.RemoveLiquidityParams(amtLPTake, 0, 0, 0, 0, 2**256 - 1)
+      IUniswapV3Spell.RemoveLiquidityParams(
+        amtLPTake,
+        0,
+        0,
+        0,
+        0,
+        type(uint256).max
+      )
     );
     vm.stopPrank();
 
@@ -267,7 +274,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     integration.reinvest(
       address(spell),
       positionId,
-      IUniswapV3Spell.ReinvestParams(0, 0, false, 0, 0, 2**256 - 1)
+      IUniswapV3Spell.ReinvestParams(0, 0, false, 0, 0, type(uint256).max)
     );
     vm.stopPrank();
 
@@ -291,7 +298,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     integration.closePosition(
       address(spell),
       positionId,
-      IUniswapV3Spell.ClosePositionParams(0, 0, 2**256 - 1, false)
+      IUniswapV3Spell.ClosePositionParams(0, 0, type(uint256).max, false)
     );
     vm.stopPrank();
 
@@ -310,7 +317,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
   }
 
   function testGetPendingRewards(uint256 positionId) internal {
-    // increase block timestamp to calculate more rewards
+    // swap tokens to generate fees for pool
     _swapTokens(
       bob,
       token0,
@@ -365,8 +372,10 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     require(IERC20(tokenIn).balanceOf(caller) >= amountIn);
 
     vm.startPrank(caller);
-    if (IERC20(tokenIn).allowance(caller, address(router)) != 2**256 - 1) {
-      IERC20(tokenIn).safeApprove(address(router), 2**256 - 1);
+    if (
+      IERC20(tokenIn).allowance(caller, address(router)) != type(uint256).max
+    ) {
+      IERC20(tokenIn).safeApprove(address(router), type(uint256).max);
     }
 
     IUniswapV3Router.ExactInputSingleParams
