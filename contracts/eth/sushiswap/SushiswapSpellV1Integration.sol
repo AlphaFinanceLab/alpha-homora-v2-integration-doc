@@ -14,7 +14,7 @@ import '../../../../interfaces/eth/sushiswap/IWMasterChef.sol';
 import '../../../../interfaces/eth/sushiswap/IMasterChef.sol';
 import '../../../../interfaces/eth/sushiswap/ISushiswapSpellV1.sol';
 
-import '../../../../interfaces/eth/uniswapv2/IUniswapV2Factory.sol';
+import '../../../../interfaces/eth/sushiswap/ISushiswapFactory.sol';
 
 import 'forge-std/console2.sol';
 
@@ -23,13 +23,19 @@ contract SushiswapSpellV1Integration is BaseIntegration {
   using HomoraMath for uint;
 
   IBankETH bank; // homora bank
-  IUniswapV2Factory factory; // sushi swap factory
+  ISushiswapFactory factory; // sushi swap factory
+
+  // addLiquidityWERC20(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256))
+  bytes4 addLiquidityWERC20Selector = 0xcc9b1880;
 
   // addLiquidityWMasterChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint256)
-  bytes4 addLiquiditySelector = 0xe07d904e;
+  bytes4 addLiquidityWMasterChefSelector = 0xe07d904e;
 
   // removeLiquidityWERC20(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256))
-  bytes4 removeLiquiditySelector = 0x1387d96d;
+  bytes4 removeLiquidityWERC20Selector = 0x1387d96d;
+
+  // removeLiquidityWMasterChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256))
+  bytes4 removeLiquidityWMasterChefSelector = 0x95723b1c;
 
   // harvestWMasterChef()
   bytes4 harvestRewardsSelector = 0x40a65ad2;
@@ -61,6 +67,11 @@ contract SushiswapSpellV1Integration is BaseIntegration {
     uint amtBMin; // Desired tokenB amount
   }
 
+  constructor(IBankETH _bank, ISushiswapFactory _factory) {
+    bank = _bank;
+    factory = _factory;
+  }
+
   function openPosition(address _spell, AddLiquidityParams memory _params)
     external
     returns (uint positionId)
@@ -81,7 +92,7 @@ contract SushiswapSpellV1Integration is BaseIntegration {
       0, // (0 is reserved for opening new position)
       _spell,
       abi.encodeWithSelector(
-        addLiquiditySelector,
+        addLiquidityWMasterChefSelector, // FIXME: change selector to addLiquidityWERC20Selector for liquidity providing
         _params.tokenA,
         _params.tokenB,
         ISushiswapSpellV1.Amounts(
@@ -110,6 +121,7 @@ contract SushiswapSpellV1Integration is BaseIntegration {
     AddLiquidityParams memory _params
   ) external {
     address lp = factory.getPair(_params.tokenA, _params.tokenB);
+    address rewardToken = getRewardToken(_positionId);
 
     // approve tokens
     ensureApprove(_params.tokenA, address(bank));
@@ -125,7 +137,7 @@ contract SushiswapSpellV1Integration is BaseIntegration {
       _positionId,
       _spell,
       abi.encodeWithSelector(
-        addLiquiditySelector,
+        addLiquidityWMasterChefSelector, // FIXME: change selector to addLiquidityWERC20Selector for liquidity providing
         _params.tokenA,
         _params.tokenB,
         ISushiswapSpellV1.Amounts(
@@ -146,6 +158,7 @@ contract SushiswapSpellV1Integration is BaseIntegration {
     doRefund(_params.tokenA);
     doRefund(_params.tokenB);
     doRefund(lp);
+    doRefund(rewardToken);
   }
 
   function reducePosition(
@@ -154,12 +167,13 @@ contract SushiswapSpellV1Integration is BaseIntegration {
     RemoveLiquidityParams memory _params
   ) external {
     address lp = factory.getPair(_params.tokenA, _params.tokenB);
+    address rewardToken = getRewardToken(_positionId);
 
     bank.execute(
       _positionId,
       _spell,
       abi.encodeWithSelector(
-        removeLiquiditySelector,
+        removeLiquidityWMasterChefSelector, // FIXME: change selector to removeLiquidityWERC20Selector for liquidity providing
         _params.tokenA,
         _params.tokenB,
         ISushiswapSpellV1.RepayAmounts(
@@ -177,19 +191,14 @@ contract SushiswapSpellV1Integration is BaseIntegration {
     doRefundETH();
     doRefund(_params.tokenA);
     doRefund(_params.tokenB);
+    doRefund(rewardToken);
     doRefund(lp);
   }
 
   function harvestRewards(address _spell, uint _positionId) external {
     bank.execute(_positionId, _spell, abi.encodeWithSelector(harvestRewardsSelector));
 
-    // query position info from position id
-    (, address collateralTokenAddress, , ) = bank.getPositionInfo(_positionId);
-
-    IWMasterChef wrapper = IWMasterChef(collateralTokenAddress);
-
-    // find reward token address from wrapper
-    address rewardToken = address(wrapper.sushi());
+    address rewardToken = getRewardToken(_positionId);
 
     doRefund(rewardToken);
   }
@@ -218,5 +227,15 @@ contract SushiswapSpellV1Integration is BaseIntegration {
     uint userPendingRewardFromChef = (collateralAmount * pendingRewardFromChef) / totalSupply;
 
     pendingRewards = userPendingRewardsFromWrapper + userPendingRewardFromChef;
+  }
+
+  function getRewardToken(uint _positionId) internal view returns (address rewardToken) {
+    // query position info from position id
+    (, address collateralTokenAddress, , ) = bank.getPositionInfo(_positionId);
+
+    IWMasterChef wrapper = IWMasterChef(collateralTokenAddress);
+
+    // find reward token address from wrapper
+    rewardToken = address(wrapper.sushi());
   }
 }

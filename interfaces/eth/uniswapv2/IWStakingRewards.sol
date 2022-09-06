@@ -6,18 +6,17 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC1155/IERC11
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.sol';
 
 import '../../IERC20Wrapper.sol';
-import './IMasterChef.sol';
 
-interface IWMasterChef is IERC1155, IERC20Wrapper {
+interface IWStakingRewards is IERC1155, IERC20Wrapper {
   /// @dev Mint ERC1155 token for the given ERC20 token.
-  function mint(uint pid, uint amount) external returns (uint id);
+  function mint(uint amount) external returns (uint id);
 
   /// @dev Burn ERC1155 token to redeem ERC20 token back.
-  function burn(uint id, uint amount) external returns (uint pid);
+  function burn(uint id, uint amount) external returns (uint);
 
-  function sushi() external view returns (IERC20);
+  /// @dev Return staking address
+  function staking() external view returns (address);
 
-  function decodeId(uint id) external pure returns (uint, uint);
-
-  function chef() external view returns (IMasterChef);
+  /// @dev Return reward token
+  function reward() external view returns (address);
 }
