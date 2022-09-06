@@ -2,13 +2,13 @@
 
 pragma solidity 0.8.16;
 
-import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC1155/IERC1155.sol";
-import "./IUniswapV3PositionManager.sol";
-import "../../IGovernable.sol";
+import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC1155/IERC1155.sol';
+import './IUniswapV3PositionManager.sol';
+import '../../IGovernable.sol';
 
 interface IWUniswapV3Position is IERC1155, IGovernable {
   struct PositionInfo {
-    uint256 uniV3PositionManagerId;
+    uint uniV3PositionManagerId;
     address pool;
     address bene;
     address token0;
@@ -19,43 +19,41 @@ interface IWUniswapV3Position is IERC1155, IGovernable {
     int24 tickUpper;
   }
 
-  function positions(uint256 _uniV3PositionId)
+  /// @dev ERC1155 token/uniV3 position ID => positionInfo
+  /// @param _uniV3PositionId uniswap v3 position id
+  /// @return info uniswap v3 position info
+  function positions(uint _uniV3PositionId) external view returns (PositionInfo memory info);
+
+  /// @dev get uniswap v3 position manager
+  function positionManager() external view returns (IUniswapV3PositionManager positionManager);
+
+  /// @dev get underlying pool from token id
+  /// @param _tokenId token id
+  /// @return pool uniswap v3 pool address
+  function getUnderlyingToken(uint _tokenId) external view returns (address pool);
+
+  /// @dev get underlying rate
+  function getUnderlyingRate(uint) external returns (uint);
+
+  /// @dev get uniswap v3 position info from token id
+  function getPositionInfoFromTokenId(uint _tokenId)
     external
     view
     returns (PositionInfo memory info);
 
-  function positionManager()
+  function mint(uint _uniV3PositionManagerId, address _bene)
     external
-    view
-    returns (IUniswapV3PositionManager positionManager);
+    returns (uint id, uint amount);
 
-  function getUnderlyingToken(uint256 _tokenId)
-    external
-    view
-    returns (address pool);
-
-  function getUnderlyingRate(uint256) external returns (uint256);
-
-  function getPositionInfoFromTokenId(uint256 _tokenId)
-    external
-    view
-    returns (PositionInfo memory info);
-
-  function mint(uint256 _uniV3PositionManagerId, address _bene)
-    external
-    returns (uint256 id, uint256 amount);
-
-  function sync(uint256 _tokenId) external returns (uint256 id, uint256 amount);
+  function sync(uint _tokenId) external returns (uint id, uint amount);
 
   function burn(
-    uint256 _tokenId,
-    uint256 _amount,
-    uint256 _minAmt0,
-    uint256 _minAmt1,
-    uint256 _deadline
-  ) external returns (uint256 amount0, uint256 amount1);
+    uint _tokenId,
+    uint _amount,
+    uint _minAmt0,
+    uint _minAmt1,
+    uint _deadline
+  ) external returns (uint amount0, uint amount1);
 
-  function collectFee(uint256 _tokenId)
-    external
-    returns (uint256 amount0, uint256 amount1);
+  function collectFee(uint _tokenId) external returns (uint amount0, uint amount1);
 }
