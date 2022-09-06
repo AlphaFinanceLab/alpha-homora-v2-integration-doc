@@ -32,6 +32,8 @@ contract TraderJoeSpellV3Integration is BaseIntegration {
     // harvestWMasterChef()
     bytes4 harvestRewardsSelector = 0x40a65ad2;
 
+    uint256 constant PRECISION = 10**18;
+
     struct AddLiquidityParams {
         address tokenA; // The first token of pool
         address tokenB; // The second token of pool
@@ -242,34 +244,29 @@ contract TraderJoeSpellV3Integration is BaseIntegration {
         IBoostedMasterChefJoe chef = IBoostedMasterChefJoe(wrapper.chef());
 
         // get info for calculating rewards
-        (uint256 pid, uint256 startTokenPerShare) = wrapper.decodeId(
+        (uint256 pid, uint256 startRewardTokenPerShare) = wrapper.decodeId(
             collateralId
         );
-        uint256 endTokenPerShare = wrapper.accJoePerShare();
+        uint256 endRewardTokenPerShare = wrapper.accJoePerShare();
         (uint256 totalSupply, , ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
 
         // pending rewards separates into two parts
         // 1. pending rewards that are in the wrapper contract
-        uint256 PRECISION = 10**18;
-        uint256 stReward = (startTokenPerShare * collateralAmount).divCeil(
-            PRECISION
-        );
-        uint256 enReward = (endTokenPerShare * collateralAmount) / PRECISION;
-        uint256 userPendingRewardsFromWrapper = (enReward > stReward)
-            ? enReward - stReward
-            : 0;
-
         // 2. pending rewards that wrapper hasn't claimed from Chef's contract
         (uint256 pendingRewardFromChef, , , ) = chef.pendingTokens(
             pid,
             address(wrapper)
         );
-        uint256 userPendingRewardFromChef = (collateralAmount *
-            pendingRewardFromChef) / totalSupply;
+        endRewardTokenPerShare +=
+            (pendingRewardFromChef * PRECISION) /
+            totalSupply;
 
-        pendingRewards =
-            userPendingRewardsFromWrapper +
-            userPendingRewardFromChef;
+        uint256 stReward = (startRewardTokenPerShare * collateralAmount)
+            .divCeil(PRECISION);
+        uint256 enReward = (endRewardTokenPerShare * collateralAmount) /
+            PRECISION;
+
+        pendingRewards = (enReward > stReward) ? enReward - stReward : 0;
     }
 
     function getRewardToken(uint256 _positionId)
