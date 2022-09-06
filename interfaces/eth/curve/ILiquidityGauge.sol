@@ -11,7 +11,7 @@ interface ILiquidityGauge {
 
   function balanceOf(address addr) external view returns (uint);
 
-  function claimable_tokens(address addr) external view returns (uint);
+  function claimable_tokens(address addr) external returns (uint);
 
   function deposit(uint value) external;
 

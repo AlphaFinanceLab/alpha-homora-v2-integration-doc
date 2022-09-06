@@ -40,29 +40,30 @@ contract CurveSpellV1Integration is BaseIntegration {
   // removeLiquidity4(address,uint256,uint256,uint256[4],uint256,uint256[4])
   bytes4 removeLiquidity4Selector = 0xe81667ea;
 
-  // harvestWMasterChef()
-  bytes4 harvestRewardsSelector = 0x40a65ad2;
+  // harvest()
+  bytes4 harvestRewardsSelector = 0x4641257d;
 
   uint constant PRECISION = 10**18;
   address public crv;
-  struct AddLiquidityParams {
+
+  struct AddLiquidity3Params {
     address lp; // LP token for the pool
-    uint[] amtsUser;
-    uint amtLPUser; //
-    uint[] amtsBorrow;
-    uint amtLPBorrow;
-    uint minLPMint;
-    uint pid;
-    uint gid;
+    uint[3] amtsUser; // Supplied underlying token amounts
+    uint amtLPUser; // Supplied LP token amount
+    uint[3] amtsBorrow; // Borrow underlying token amounts
+    uint amtLPBorrow; // Borrow LP token amount
+    uint minLPMint; // Desired LP token amount (slippage control)
+    uint pid; // Curve pool id for the pool
+    uint gid; // Curve gauge id for the pool
   }
 
-  struct RemoveLiquidityParams {
-    address lp;
-    uint amtLPTake;
-    uint amtLPWithdraw;
-    uint[] amtsRepay;
-    uint amtLPRepay;
-    uint[] amtsMin;
+  struct RemoveLiquidity3Params {
+    address lp; // LP token for the pool
+    uint amtLPTake; // Amount of LP being removed from the position
+    uint amtLPWithdraw; // Amount of LP being received from removing the position (remaining will be converted to each tokens)
+    uint[3] amtsRepay; // Repay tokens amount (repay all -> type(uint).max)
+    uint amtLPRepay; // Repay LP token amount
+    uint[3] amtsMin; // Desired underlying token amounts (slippage control)
   }
 
   constructor(
@@ -75,23 +76,26 @@ contract CurveSpellV1Integration is BaseIntegration {
     crv = _crv;
   }
 
-  function openPosition(address _spell, AddLiquidityParams memory _params)
+  function openPosition(address _spell, AddLiquidity3Params memory _params)
     external
     returns (uint positionId)
   {
-    require(_params.amtsUser.length == _params.amtsBorrow.length);
+    require(_params.amtsUser.length == _params.amtsBorrow.length, 'amount length mismatched');
 
     address pool = registry.get_pool_from_lp_token(_params.lp);
     (uint n, ) = registry.get_n_coins(pool);
-    require(_params.amtsUser.length == n);
+    require(_params.amtsUser.length == n, 'not n');
 
     address[8] memory tokens = registry.get_coins(pool);
 
-    // ulTokens[lp] = new address[](n);
+    // approve and transfer tokens
     for (uint i = 0; i < n; i++) {
       ensureApprove(tokens[i], address(bank));
       IERC20(tokens[i]).safeTransferFrom(msg.sender, address(this), _params.amtsUser[i]);
     }
+    ensureApprove(_params.lp, address(bank));
+    IERC20(_params.lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
+
     bytes4 addLiquiditySelector;
     if (n == 2) {
       addLiquiditySelector = addLiquidity2Selector;
@@ -127,17 +131,19 @@ contract CurveSpellV1Integration is BaseIntegration {
   function increasePosition(
     uint _positionId,
     address _spell,
-    AddLiquidityParams memory _params
+    AddLiquidity3Params memory _params
   ) external {
     address pool = registry.get_pool_from_lp_token(_params.lp);
     (uint n, ) = registry.get_n_coins(pool);
     address[8] memory tokens = registry.get_coins(pool);
 
-    // ulTokens[lp] = new address[](n);
+    // approve and transfer tokens
     for (uint i = 0; i < n; i++) {
       ensureApprove(tokens[i], address(bank));
       IERC20(tokens[i]).safeTransferFrom(msg.sender, address(this), _params.amtsUser[i]);
     }
+    ensureApprove(_params.lp, address(bank));
+    IERC20(_params.lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
 
     bytes4 addLiquiditySelector;
     if (n == 2) {
@@ -167,14 +173,13 @@ contract CurveSpellV1Integration is BaseIntegration {
     );
 
     for (uint i = 0; i < n; i++) doRefund(tokens[i]);
-
     doRefund(crv);
   }
 
   function reducePosition(
     address _spell,
     uint _positionId,
-    RemoveLiquidityParams memory _params
+    RemoveLiquidity3Params memory _params
   ) external {
     address pool = registry.get_pool_from_lp_token(_params.lp);
     (uint n, ) = registry.get_n_coins(pool);
@@ -206,10 +211,8 @@ contract CurveSpellV1Integration is BaseIntegration {
       )
     );
 
-    // address pool = registry.get_pool_from_lp_token(_params.lp);
-    // (uint n, ) = registry.get_n_coins(pool);
     for (uint i = 0; i < n; i++) doRefund(tokens[i]);
-
+    doRefund(_params.lp);
     doRefund(crv);
   }
 
@@ -219,7 +222,7 @@ contract CurveSpellV1Integration is BaseIntegration {
     doRefund(crv);
   }
 
-  function getPendingRewards(uint _positionId) external view returns (uint pendingRewards) {
+  function getPendingRewards(uint _positionId) external returns (uint pendingRewards) {
     // query position info from position id
     (, address collateralTokenAddress, uint collateralId, uint collateralAmount) = bank
       .getPositionInfo(_positionId);
@@ -228,21 +231,20 @@ contract CurveSpellV1Integration is BaseIntegration {
 
     // get info for calculating rewards
     (uint pid, uint gid, uint startRewardTokenPerShare) = wrapper.decodeId(collateralId);
+
     address lp = wrapper.getUnderlyingTokenFromIds(pid, gid);
     (address gauge, uint endRewardTokenPerShare) = wrapper.gauges(pid, gid);
-    // (, , , uint endRewardTokenPerShare) = chef.poolInfo(pid);
-    uint totalSupply = IERC20(lp).balanceOf(address(wrapper)); // total lp from wrapper
+    uint totalSupply = IERC20(gauge).balanceOf(address(wrapper)); // total gauge share of wrapper
 
     // pending rewards separates into two parts
     // 1. pending rewards that are in the wrapper contract
+    // 2. pending rewards that wrapper hasn't claimed from Chef's contract
+    uint pendingRewardFromGauge = ILiquidityGauge(gauge).claimable_tokens(address(wrapper));
+    endRewardTokenPerShare += (pendingRewardFromGauge * PRECISION) / totalSupply;
+
     uint stReward = (startRewardTokenPerShare * collateralAmount).divCeil(PRECISION);
     uint enReward = (endRewardTokenPerShare * collateralAmount) / PRECISION;
-    uint userPendingRewardsFromWrapper = (enReward > stReward) ? enReward - stReward : 0;
 
-    // 2. pending rewards that wrapper hasn't claimed from Chef's contract
-    uint pendingRewardFromChef = ILiquidityGauge(gauge).claimable_tokens(address(wrapper));
-    uint userPendingRewardFromChef = (collateralAmount * pendingRewardFromChef) / totalSupply;
-
-    pendingRewards = userPendingRewardsFromWrapper + userPendingRewardFromChef;
+    pendingRewards = (enReward > stReward) ? enReward - stReward : 0;
   }
 }
