@@ -342,6 +342,33 @@ contract BeetsSpellV1Test is UtilsFTM {
         uint256 pendingRewards = integration.getPendingRewards(_positionId);
         require(pendingRewards > 0, "pending rewards should be more than 0");
 
+        // query position info from position id
+        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
+            _positionId
+        );
+
+        IWMasterChefBeetsWorker wrapper = IWMasterChefBeetsWorker(
+            collateralTokenAddress
+        );
+
+        // find reward token address
+        address rewardToken = address(wrapper.rewardToken());
+
+        // user info before
+        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
+
+        // call contract
+        vm.startPrank(alice);
+        integration.harvestRewards(address(spell), _positionId);
+        vm.stopPrank();
+
+        // user info after
+        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
+
+        uint256 claimedRewards = userBalanceReward_after -
+            userBalanceReward_before;
         console2.log("pendingRewards:", pendingRewards);
+        console2.log("claimedRewards:", claimedRewards);
+        require(pendingRewards == claimedRewards, "unexpected reward amount");
     }
 }
