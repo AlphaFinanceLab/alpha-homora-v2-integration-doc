@@ -39,7 +39,7 @@ contract SushiswapSpellV1Integration is BaseIntegration {
 
   // harvestWMasterChef()
   bytes4 harvestRewardsSelector = 0x40a65ad2;
-  uint constant PRECISION = 10**18;
+  uint constant PRECISION = 10**12;
 
   struct AddLiquidityParams {
     address tokenA; // The first token of pool
@@ -213,20 +213,34 @@ contract SushiswapSpellV1Integration is BaseIntegration {
 
     // get info for calculating rewards
     (uint pid, uint startRewardTokenPerShare) = wrapper.decodeId(collateralId);
-    (, , , uint endRewardTokenPerShare) = chef.poolInfo(pid);
-    (uint totalSupply, ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
+    uint endRewardTokenPerShare = calculateAccRewardPerShareChef(chef, pid);
 
-    // pending rewards separates into two parts
-    // 1. pending rewards that are in the wrapper contract
     uint stReward = (startRewardTokenPerShare * collateralAmount).divCeil(PRECISION);
     uint enReward = (endRewardTokenPerShare * collateralAmount) / PRECISION;
-    uint userPendingRewardsFromWrapper = (enReward > stReward) ? enReward - stReward : 0;
 
-    // 2. pending rewards that wrapper hasn't claimed from Chef's contract
-    uint pendingRewardFromChef = chef.pendingSushi(pid, address(wrapper));
-    uint userPendingRewardFromChef = (collateralAmount * pendingRewardFromChef) / totalSupply;
+    pendingRewards = (enReward > stReward) ? enReward - stReward : 0;
+  }
 
-    pendingRewards = userPendingRewardsFromWrapper + userPendingRewardFromChef;
+  function calculateAccRewardPerShareChef(IMasterChef _chef, uint _pid)
+    internal
+    view
+    returns (uint accSushiPerShare)
+  {
+    address lpToken;
+    uint allocPoint;
+    uint lastRewardBlock;
+    (lpToken, allocPoint, lastRewardBlock, accSushiPerShare) = _chef.poolInfo(_pid);
+    if (block.number <= lastRewardBlock) {
+      return accSushiPerShare;
+    }
+    uint lpSupply = IERC20(lpToken).balanceOf(address(_chef));
+    if (lpSupply == 0) {
+      lastRewardBlock = block.number;
+      return accSushiPerShare;
+    }
+    uint multiplier = _chef.getMultiplier(lastRewardBlock, block.number);
+    uint sushiReward = (multiplier * _chef.sushiPerBlock() * allocPoint) / _chef.totalAllocPoint();
+    accSushiPerShare += ((sushiReward * PRECISION) / lpSupply);
   }
 
   function getRewardToken(uint _positionId) internal view returns (address rewardToken) {

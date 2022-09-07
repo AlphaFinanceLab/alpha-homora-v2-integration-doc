@@ -24,4 +24,10 @@ interface IMasterChef {
   function deposit(uint pid, uint amount) external;
 
   function withdraw(uint pid, uint amount) external;
+
+  function getMultiplier(uint _from, uint _to) external view returns (uint);
+
+  function totalAllocPoint() external view returns (uint);
+
+  function sushiPerBlock() external view returns (uint);
 }
