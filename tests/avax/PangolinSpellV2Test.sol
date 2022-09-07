@@ -7,7 +7,7 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/Sa
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 import './UtilsAVAX.sol';
-import '../../contracts/avax/pool/pangolin/PangolinSpellV2Integration.sol';
+import '../../contracts/avax/pangolin/PangolinSpellV2Integration.sol';
 import '../../interfaces/avax/pangolin/IMiniChefV2PNG.sol';
 import '../../interfaces/avax/pangolin/IWMiniChefV2PNG.sol';
 import '../../interfaces/avax/pangolin/IPangolinSpellV2.sol';

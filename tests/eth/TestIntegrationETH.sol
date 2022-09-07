@@ -6,5 +6,5 @@ import 'forge-std/Test.sol';
 import 'ds-test/test.sol';
 
 contract TestIntegrationETH is Test {
-    function setUp() public {}
+  function setUp() public {}
 }

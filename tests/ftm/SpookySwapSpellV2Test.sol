@@ -2,335 +2,302 @@
 
 pragma solidity 0.8.16;
 
-import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.sol';
+import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol';
+import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
-import "./UtilsFTM.sol";
-import "../../contracts/ftm/pool/spookyswap/SpookySwapSpellV2Integration.sol";
-import "../../../../interfaces/ftm/IBankFTM.sol";
-import "../../../../interfaces/ftm/spookyswap/ISpookySwapFactory.sol";
-import "../../../../interfaces/ftm/spookyswap/ISpookySwapSpellV2.sol";
-import "../../../../interfaces/ftm/spookyswap/IMasterChefBooV2.sol";
-import "../../../../interfaces/ftm/spookyswap/IWMasterChefBooV2.sol";
+import './UtilsFTM.sol';
+import '../../contracts/ftm/spookyswap/SpookySwapSpellV2Integration.sol';
+import '../../../../interfaces/ftm/IBankFTM.sol';
+import '../../../../interfaces/ftm/spookyswap/ISpookySwapFactory.sol';
+import '../../../../interfaces/ftm/spookyswap/ISpookySwapSpellV2.sol';
+import '../../../../interfaces/ftm/spookyswap/IMasterChefBooV2.sol';
+import '../../../../interfaces/ftm/spookyswap/IWMasterChefBooV2.sol';
 
-import "forge-std/console2.sol";
+import 'forge-std/console2.sol';
 
 contract SpookySwapSpellV2Test is UtilsFTM {
-    using SafeERC20 for IERC20;
+  using SafeERC20 for IERC20;
 
-    IBankFTM bank = IBankFTM(bankAddress);
+  IBankFTM bank = IBankFTM(bankAddress);
 
-    // TODO: change spell address you want
-    ISpookySwapSpellV2 spell =
-        ISpookySwapSpellV2(0x04A65eaae1C6005a6522f5fd886F53Fce9F8a895); // spell to interact with
-    ISpookySwapFactory factory =
-        ISpookySwapFactory(0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3); // trader joe factory
+  // TODO: change spell address you want
+  ISpookySwapSpellV2 spell = ISpookySwapSpellV2(0x04A65eaae1C6005a6522f5fd886F53Fce9F8a895); // spell to interact with
+  ISpookySwapFactory factory = ISpookySwapFactory(0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3); // trader joe factory
 
-    // TODO: change tokenA you want
-    address tokenA = WFTM; // The first token of pool
-    // TODO: change tokenB you want
-    address tokenB = USDC; // The second token of pool
-    // TODO: change pool id you want
-    uint256 pid = 10; // Pool id of MasterchefBoo
+  // TODO: change tokenA you want
+  address tokenA = WFTM; // The first token of pool
+  // TODO: change tokenB you want
+  address tokenB = USDC; // The second token of pool
+  // TODO: change pool id you want
+  uint pid = 10; // Pool id of MasterchefBoo
 
-    SpookySwapSpellV2Integration integration;
-    address lp;
+  SpookySwapSpellV2Integration integration;
+  address lp;
 
-    function setUp() public override {
-        super.setUp();
+  function setUp() public override {
+    super.setUp();
 
-        vm.label(address(spell), "spell");
+    vm.label(address(spell), 'spell');
 
-        // deploy integration contract
-        integration = new SpookySwapSpellV2Integration(bank, factory);
-        lp = factory.getPair(tokenA, tokenB);
+    // deploy integration contract
+    integration = new SpookySwapSpellV2Integration(bank, factory);
+    lp = factory.getPair(tokenA, tokenB);
 
-        // prepare fund for user
-        prepareFund(alice, tokenA, tokenB, lp, address(integration));
+    // prepare fund for user
+    prepareFund(alice, tokenA, tokenB, lp, address(integration));
 
-        // set whitelist that integration contract can call HomoraBank, otherwise tx will fail
-        // NOTE: set whitelist contract must be executed from ALPHA governor
-        setWhitelistContract(bank, alice, address(integration));
+    // set whitelist that integration contract can call HomoraBank, otherwise tx will fail
+    // NOTE: set whitelist contract must be executed from ALPHA governor
+    setWhitelistContract(bank, alice, address(integration));
 
-        // set credit limit that integration contract can be borrow with uncollateralized loan
-        setCreditLimit(bank, address(integration), tokenA, type(uint256).max);
-        setCreditLimit(bank, address(integration), tokenB, type(uint256).max);
-    }
+    // set credit limit that integration contract can be borrow with uncollateralized loan
+    setCreditLimit(bank, address(integration), tokenA, type(uint).max);
+    setCreditLimit(bank, address(integration), tokenB, type(uint).max);
+  }
 
-    function testAll() public {
-        uint256 positionId = testOpenPosition();
-        testIncreasePosition(positionId);
-        testGetPendingRewards(positionId);
-        testHarvestRewards(positionId);
-        testReducePosition(positionId);
-    }
+  function testAll() public {
+    uint positionId = testOpenPosition();
+    testIncreasePosition(positionId);
+    testGetPendingRewards(positionId);
+    testHarvestRewards(positionId);
+    testReducePosition(positionId);
+  }
 
-    function testOpenPosition() internal returns (uint256 positionId) {
-        uint256 amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
-        uint256 amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
-        uint256 amtLPUser = 100;
-        uint256 amtABorrow = amtAUser;
-        uint256 amtBBorrow = amtBUser;
-        uint256 amtLPBorrow = 0;
-        uint256 amtAMin = 0;
-        uint256 amtBMin = 0;
+  function testOpenPosition() internal returns (uint positionId) {
+    uint amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
+    uint amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
+    uint amtLPUser = 100;
+    uint amtABorrow = amtAUser;
+    uint amtBBorrow = amtBUser;
+    uint amtLPBorrow = 0;
+    uint amtAMin = 0;
+    uint amtBMin = 0;
 
-        // user info before
-        uint256 userBalanceTokenA_before = balanceOf(tokenA, alice);
-        uint256 userBalanceTokenB_before = balanceOf(tokenB, alice);
-        uint256 userBalanceLP_before = balanceOf(lp, alice);
+    // user info before
+    uint userBalanceTokenA_before = balanceOf(tokenA, alice);
+    uint userBalanceTokenB_before = balanceOf(tokenB, alice);
+    uint userBalanceLP_before = balanceOf(lp, alice);
 
-        // assume that user wants to open position by calling to integration contract
-        // so integration contract will forward a request to HomoraBank further
+    // assume that user wants to open position by calling to integration contract
+    // so integration contract will forward a request to HomoraBank further
 
-        // call contract
-        vm.startPrank(alice);
-        positionId = integration.openPosition(
-            address(spell),
-            SpookySwapSpellV2Integration.AddLiquidityParams(
-                tokenA,
-                tokenB,
-                amtAUser,
-                amtBUser,
-                amtLPUser,
-                amtABorrow,
-                amtBBorrow,
-                amtLPBorrow,
-                amtAMin,
-                amtBMin,
-                pid
-            )
-        );
-        vm.stopPrank();
+    // call contract
+    vm.startPrank(alice);
+    positionId = integration.openPosition(
+      address(spell),
+      SpookySwapSpellV2Integration.AddLiquidityParams(
+        tokenA,
+        tokenB,
+        amtAUser,
+        amtBUser,
+        amtLPUser,
+        amtABorrow,
+        amtBBorrow,
+        amtLPBorrow,
+        amtAMin,
+        amtBMin,
+        pid
+      )
+    );
+    vm.stopPrank();
 
-        // user info after
-        uint256 userBalanceTokenA_after = balanceOf(tokenA, alice);
-        uint256 userBalanceTokenB_after = balanceOf(tokenB, alice);
-        uint256 userBalanceLP_after = balanceOf(lp, alice);
+    // user info after
+    uint userBalanceTokenA_after = balanceOf(tokenA, alice);
+    uint userBalanceTokenB_after = balanceOf(tokenB, alice);
+    uint userBalanceLP_after = balanceOf(lp, alice);
 
-        require(
-            userBalanceTokenA_before > userBalanceTokenA_after,
-            "incorrect user balance of tokenA"
-        );
-        require(
-            userBalanceTokenB_before > userBalanceTokenB_after,
-            "incorrect user balance of tokenB"
-        );
-        require(
-            userBalanceLP_before > userBalanceLP_after,
-            "incorrect user balance of lp"
-        );
-    }
+    require(userBalanceTokenA_before > userBalanceTokenA_after, 'incorrect user balance of tokenA');
+    require(userBalanceTokenB_before > userBalanceTokenB_after, 'incorrect user balance of tokenB');
+    require(userBalanceLP_before > userBalanceLP_after, 'incorrect user balance of lp');
+  }
 
-    function testIncreasePosition(uint256 _positionId) internal {
-        // increase block timestamp to calculate more rewards
-        vm.warp(block.timestamp + 10000);
+  function testIncreasePosition(uint _positionId) internal {
+    // increase block timestamp to calculate more rewards
+    vm.warp(block.timestamp + 10000);
 
-        // get collateral information from position id
-        (, address collateralTokenAddress, , uint256 collateralAmount) = bank
-            .getPositionInfo(_positionId);
+    // get collateral information from position id
+    (, address collateralTokenAddress, , ) = bank.getPositionInfo(_positionId);
 
-        IWMasterChefBooV2 wrapper = IWMasterChefBooV2(collateralTokenAddress);
+    IWMasterChefBooV2 wrapper = IWMasterChefBooV2(collateralTokenAddress);
 
-        // find reward token address
-        address rewardToken = address(wrapper.rewardToken());
+    // find reward token address
+    address rewardToken = address(wrapper.rewardToken());
 
-        uint256 amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
-        uint256 amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
-        uint256 amtLPUser = 100;
-        uint256 amtABorrow = amtAUser;
-        uint256 amtBBorrow = amtBUser;
-        uint256 amtLPBorrow = 0;
-        uint256 amtAMin = 0;
-        uint256 amtBMin = 0;
+    uint amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
+    uint amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
+    uint amtLPUser = 100;
+    uint amtABorrow = amtAUser;
+    uint amtBBorrow = amtBUser;
+    uint amtLPBorrow = 0;
+    uint amtAMin = 0;
+    uint amtBMin = 0;
 
-        // user info before
-        uint256 userBalanceTokenA_before = balanceOf(tokenA, alice);
-        uint256 userBalanceTokenB_before = balanceOf(tokenB, alice);
-        uint256 userBalanceLP_before = balanceOf(lp, alice);
-        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
+    // user info before
+    uint userBalanceTokenA_before = balanceOf(tokenA, alice);
+    uint userBalanceTokenB_before = balanceOf(tokenB, alice);
+    uint userBalanceLP_before = balanceOf(lp, alice);
+    uint userBalanceReward_before = balanceOf(rewardToken, alice);
 
-        // call contract
-        vm.startPrank(alice);
-        integration.increasePosition(
-            _positionId,
-            address(spell),
-            SpookySwapSpellV2Integration.AddLiquidityParams(
-                tokenA,
-                tokenB,
-                amtAUser,
-                amtBUser,
-                amtLPUser,
-                amtABorrow,
-                amtBBorrow,
-                amtLPBorrow,
-                amtAMin,
-                amtBMin,
-                pid
-            )
-        );
-        vm.stopPrank();
+    // call contract
+    vm.startPrank(alice);
+    integration.increasePosition(
+      _positionId,
+      address(spell),
+      SpookySwapSpellV2Integration.AddLiquidityParams(
+        tokenA,
+        tokenB,
+        amtAUser,
+        amtBUser,
+        amtLPUser,
+        amtABorrow,
+        amtBBorrow,
+        amtLPBorrow,
+        amtAMin,
+        amtBMin,
+        pid
+      )
+    );
+    vm.stopPrank();
 
-        // user info after
-        uint256 userBalanceTokenA_after = balanceOf(tokenA, alice);
-        uint256 userBalanceTokenB_after = balanceOf(tokenB, alice);
-        uint256 userBalanceLP_after = balanceOf(lp, alice);
-        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
+    // user info after
+    uint userBalanceTokenA_after = balanceOf(tokenA, alice);
+    uint userBalanceTokenB_after = balanceOf(tokenB, alice);
+    uint userBalanceLP_after = balanceOf(lp, alice);
+    uint userBalanceReward_after = balanceOf(rewardToken, alice);
 
-        require(
-            userBalanceTokenA_before > userBalanceTokenA_after,
-            "incorrect user balance of tokenA"
-        );
-        require(
-            userBalanceTokenB_before > userBalanceTokenB_after,
-            "incorrect user balance of tokenB"
-        );
-        require(
-            userBalanceLP_before > userBalanceLP_after,
-            "incorrect user balance of lp"
-        );
-        require(
-            userBalanceReward_after > userBalanceReward_before,
-            "incorrect user balance of reward token"
-        );
-    }
+    require(userBalanceTokenA_before > userBalanceTokenA_after, 'incorrect user balance of tokenA');
+    require(userBalanceTokenB_before > userBalanceTokenB_after, 'incorrect user balance of tokenB');
+    require(userBalanceLP_before > userBalanceLP_after, 'incorrect user balance of lp');
+    require(
+      userBalanceReward_after > userBalanceReward_before,
+      'incorrect user balance of reward token'
+    );
+  }
 
-    function testReducePosition(uint256 _positionId) internal {
-        // increase block timestamp to calculate more rewards
-        vm.warp(block.timestamp + 10000);
+  function testReducePosition(uint _positionId) internal {
+    // increase block timestamp to calculate more rewards
+    vm.warp(block.timestamp + 10000);
 
-        // get collateral information from position id
-        (, address collateralTokenAddress, , uint256 collateralAmount) = bank
-            .getPositionInfo(_positionId);
+    // get collateral information from position id
+    (, address collateralTokenAddress, , uint collateralAmount) = bank.getPositionInfo(_positionId);
 
-        IWMasterChefBooV2 wrapper = IWMasterChefBooV2(collateralTokenAddress);
+    IWMasterChefBooV2 wrapper = IWMasterChefBooV2(collateralTokenAddress);
 
-        // find reward token address
-        address rewardToken = address(wrapper.rewardToken());
+    // find reward token address
+    address rewardToken = address(wrapper.rewardToken());
 
-        uint256 amtLPTake = collateralAmount; // withdraw 100% of position
-        uint256 amtLPWithdraw = 100; // return only 100 LP to user
-        uint256 amtARepay = type(uint256).max; // repay 100% of tokenA
-        uint256 amtBRepay = type(uint256).max; // repay 100% of tokenB
-        uint256 amtLPRepay = 0; // (always 0 since LP borrow is disallowed)
-        uint256 amtAMin = 0; // amount of tokenA that user expects after withdrawal
-        uint256 amtBMin = 0; // amount of tokenB that user expects after withdrawal
+    uint amtLPTake = collateralAmount; // withdraw 100% of position
+    uint amtLPWithdraw = 100; // return only 100 LP to user
+    uint amtARepay = type(uint).max; // repay 100% of tokenA
+    uint amtBRepay = type(uint).max; // repay 100% of tokenB
+    uint amtLPRepay = 0; // (always 0 since LP borrow is disallowed)
+    uint amtAMin = 0; // amount of tokenA that user expects after withdrawal
+    uint amtBMin = 0; // amount of tokenB that user expects after withdrawal
 
-        // user info before
-        uint256 userBalanceTokenA_before = balanceOf(tokenA, alice);
-        uint256 userBalanceTokenB_before = balanceOf(tokenB, alice);
-        uint256 userBalanceLP_before = balanceOf(lp, alice);
-        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
+    // user info before
+    uint userBalanceTokenA_before = balanceOf(tokenA, alice);
+    uint userBalanceTokenB_before = balanceOf(tokenB, alice);
+    uint userBalanceLP_before = balanceOf(lp, alice);
+    uint userBalanceReward_before = balanceOf(rewardToken, alice);
 
-        // call contract
-        vm.startPrank(alice);
-        integration.reducePosition(
-            address(spell),
-            _positionId,
-            SpookySwapSpellV2Integration.RemoveLiquidityParams(
-                tokenA,
-                tokenB,
-                amtLPTake,
-                amtLPWithdraw,
-                amtARepay,
-                amtBRepay,
-                amtLPRepay,
-                amtAMin,
-                amtBMin
-            )
-        );
-        vm.stopPrank();
+    // call contract
+    vm.startPrank(alice);
+    integration.reducePosition(
+      address(spell),
+      _positionId,
+      SpookySwapSpellV2Integration.RemoveLiquidityParams(
+        tokenA,
+        tokenB,
+        amtLPTake,
+        amtLPWithdraw,
+        amtARepay,
+        amtBRepay,
+        amtLPRepay,
+        amtAMin,
+        amtBMin
+      )
+    );
+    vm.stopPrank();
 
-        // user info after
-        uint256 userBalanceTokenA_after = balanceOf(tokenA, alice);
-        uint256 userBalanceTokenB_after = balanceOf(tokenB, alice);
-        uint256 userBalanceLP_after = balanceOf(lp, alice);
-        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
+    // user info after
+    uint userBalanceTokenA_after = balanceOf(tokenA, alice);
+    uint userBalanceTokenB_after = balanceOf(tokenB, alice);
+    uint userBalanceLP_after = balanceOf(lp, alice);
+    uint userBalanceReward_after = balanceOf(rewardToken, alice);
 
-        require(
-            userBalanceTokenA_after > userBalanceTokenA_before,
-            "incorrect user balance of tokenA"
-        );
-        require(
-            userBalanceTokenB_after > userBalanceTokenB_before,
-            "incorrect user balance of tokenB"
-        );
-        require(
-            userBalanceLP_after - userBalanceLP_before == amtLPWithdraw,
-            "incorrect user balance of LP"
-        );
-        require(
-            userBalanceReward_after > userBalanceReward_before,
-            "incorrect user balance of reward token"
-        );
-    }
+    require(userBalanceTokenA_after > userBalanceTokenA_before, 'incorrect user balance of tokenA');
+    require(userBalanceTokenB_after > userBalanceTokenB_before, 'incorrect user balance of tokenB');
+    require(
+      userBalanceLP_after - userBalanceLP_before == amtLPWithdraw,
+      'incorrect user balance of LP'
+    );
+    require(
+      userBalanceReward_after > userBalanceReward_before,
+      'incorrect user balance of reward token'
+    );
+  }
 
-    function testHarvestRewards(uint256 _positionId) internal {
-        // increase block timestamp to calculate more rewards
-        vm.warp(block.timestamp + 10000);
+  function testHarvestRewards(uint _positionId) internal {
+    // increase block timestamp to calculate more rewards
+    vm.warp(block.timestamp + 10000);
 
-        // query position info from position id
-        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
-            _positionId
-        );
+    // query position info from position id
+    (, address collateralTokenAddress, , ) = bank.getPositionInfo(_positionId);
 
-        IWMasterChefBooV2 wrapper = IWMasterChefBooV2(collateralTokenAddress);
+    IWMasterChefBooV2 wrapper = IWMasterChefBooV2(collateralTokenAddress);
 
-        // find reward token address
-        address rewardToken = address(wrapper.rewardToken());
+    // find reward token address
+    address rewardToken = address(wrapper.rewardToken());
 
-        // user info before
-        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
+    // user info before
+    uint userBalanceReward_before = balanceOf(rewardToken, alice);
 
-        // call contract
-        vm.startPrank(alice);
-        integration.harvestRewards(address(spell), _positionId);
-        vm.stopPrank();
+    // call contract
+    vm.startPrank(alice);
+    integration.harvestRewards(address(spell), _positionId);
+    vm.stopPrank();
 
-        // user info after
-        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
+    // user info after
+    uint userBalanceReward_after = balanceOf(rewardToken, alice);
 
-        require(
-            userBalanceReward_after > userBalanceReward_before,
-            "incorrect user balance of reward token"
-        );
-    }
+    require(
+      userBalanceReward_after > userBalanceReward_before,
+      'incorrect user balance of reward token'
+    );
+  }
 
-    function testGetPendingRewards(uint256 _positionId) internal {
-        // increase block timestamp to calculate more rewards
-        vm.warp(block.timestamp + 10000);
+  function testGetPendingRewards(uint _positionId) internal {
+    // increase block timestamp to calculate more rewards
+    vm.warp(block.timestamp + 10000);
 
-        // call contract
-        uint256 pendingRewards = integration.getPendingRewards(_positionId);
-        require(pendingRewards > 0, "pending rewards should be more than 0");
+    // call contract
+    uint pendingRewards = integration.getPendingRewards(_positionId);
+    require(pendingRewards > 0, 'pending rewards should be more than 0');
 
-        // query position info from position id
-        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
-            _positionId
-        );
+    // query position info from position id
+    (, address collateralTokenAddress, , ) = bank.getPositionInfo(_positionId);
 
-        IWMasterChefBooV2 wrapper = IWMasterChefBooV2(collateralTokenAddress);
+    IWMasterChefBooV2 wrapper = IWMasterChefBooV2(collateralTokenAddress);
 
-        // find reward token address
-        address rewardToken = address(wrapper.rewardToken());
+    // find reward token address
+    address rewardToken = address(wrapper.rewardToken());
 
-        // user info before
-        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
+    // user info before
+    uint userBalanceReward_before = balanceOf(rewardToken, alice);
 
-        // call contract
-        vm.startPrank(alice);
-        integration.harvestRewards(address(spell), _positionId);
-        vm.stopPrank();
+    // call contract
+    vm.startPrank(alice);
+    integration.harvestRewards(address(spell), _positionId);
+    vm.stopPrank();
 
-        // user info after
-        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
+    // user info after
+    uint userBalanceReward_after = balanceOf(rewardToken, alice);
 
-        uint256 claimedRewards = userBalanceReward_after -
-            userBalanceReward_before;
+    uint claimedRewards = userBalanceReward_after - userBalanceReward_before;
 
-        console2.log("pendingRewards:", pendingRewards);
-        console2.log("claimedRewards:", claimedRewards);
-        require(pendingRewards == claimedRewards, "unexpected reward amount");
-    }
+    console2.log('pendingRewards:', pendingRewards);
+    console2.log('claimedRewards:', claimedRewards);
+    require(pendingRewards == claimedRewards, 'unexpected reward amount');
+  }
 }

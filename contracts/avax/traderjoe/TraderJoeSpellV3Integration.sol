@@ -6,33 +6,33 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.s
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol';
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
-import '../../../BaseIntegration.sol';
-import '../../../utils/HomoraMath.sol';
-import '../../../../interfaces/avax/IBankAVAX.sol';
-import '../../../../interfaces/avax/pangolin/IMiniChefV2PNG.sol';
-import '../../../../interfaces/avax/pangolin/IWMiniChefV2PNG.sol';
-import '../../../../interfaces/avax/pangolin/IPangolinSpellV2.sol';
-import '../../../../interfaces/avax/pangolin/IPangolinFactory.sol';
+import '../../BaseIntegration.sol';
+import '../../utils/HomoraMath.sol';
+import '../../../interfaces/avax/IBankAVAX.sol';
+import '../../../interfaces/avax/traderjoe/ITraderJoeSpellV3.sol';
+import '../../../interfaces/avax/traderjoe/IBoostedMasterChefJoe.sol';
+import '../../../interfaces/avax/traderjoe/IWBoostedMasterChefJoeWorker.sol';
+import '../../../interfaces/avax/traderjoe/ITraderJoeFactory.sol';
 
 import 'forge-std/console2.sol';
 
-contract PangolinSpellV2Integration is BaseIntegration {
+contract TraderJoeSpellV3Integration is BaseIntegration {
   using SafeERC20 for IERC20;
   using HomoraMath for uint;
 
   IBankAVAX bank; // homora bank
-  IPangolinFactory factory; // pangolin factory
+  ITraderJoeFactory factory; // traderjoe factory
 
-  // addLiquidityWMiniChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint256)
-  bytes4 addLiquiditySelector = 0x2951434c;
+  // addLiquidityWMasterChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint256)
+  bytes4 addLiquiditySelector = 0xe07d904e;
 
-  // removeLiquidityWMiniChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256))
-  bytes4 removeLiquiditySelector = 0xde1ecfce;
+  // removeLiquidityWMasterChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256))
+  bytes4 removeLiquiditySelector = 0x95723b1c;
 
-  // harvestWMiniChefRewards()
-  bytes4 harvestRewardsSelector = 0x32032b5a;
+  // harvestWMasterChef()
+  bytes4 harvestRewardsSelector = 0x40a65ad2;
 
-  uint constant PRECISION = 10**12;
+  uint constant PRECISION = 10**18;
 
   struct AddLiquidityParams {
     address tokenA; // The first token of pool
@@ -45,7 +45,7 @@ contract PangolinSpellV2Integration is BaseIntegration {
     uint amtLPBorrow; // Borrow LP token amount
     uint amtAMin; // Desired tokenA amount (slippage control)
     uint amtBMin; // Desired tokenB amount (slippage control)
-    uint pid; // pool id of MinichefV2
+    uint pid; // pool id of BoostedMasterChefJoe
   }
 
   struct RemoveLiquidityParams {
@@ -53,14 +53,14 @@ contract PangolinSpellV2Integration is BaseIntegration {
     address tokenB; // The second token of pool
     uint amtLPTake; // Amount of LP being removed from the position
     uint amtLPWithdraw; // Amount of LP being received from removing the position (remaining will be converted to tokenA, tokenB)
-    uint amtARepay; // Repay tokenA amount
-    uint amtBRepay; // Repay tokenB amount
+    uint amtARepay; // Repay tokenA amount (repay all -> type(uint).max)
+    uint amtBRepay; // Repay tokenB amount (repay all -> type(uint).max)
     uint amtLPRepay; // Repay LP token amount
     uint amtAMin; // Desired tokenA amount
     uint amtBMin; // Desired tokenB amount
   }
 
-  constructor(IBankAVAX _bank, IPangolinFactory _factory) {
+  constructor(IBankAVAX _bank, ITraderJoeFactory _factory) {
     bank = _bank;
     factory = _factory;
   }
@@ -88,7 +88,7 @@ contract PangolinSpellV2Integration is BaseIntegration {
         addLiquiditySelector,
         _params.tokenA,
         _params.tokenB,
-        IPangolinSpellV2.Amounts(
+        ITraderJoeSpellV3.Amounts(
           _params.amtAUser,
           _params.amtBUser,
           _params.amtLPUser,
@@ -125,6 +125,7 @@ contract PangolinSpellV2Integration is BaseIntegration {
     IERC20(_params.tokenA).safeTransferFrom(msg.sender, address(this), _params.amtAUser);
     IERC20(_params.tokenB).safeTransferFrom(msg.sender, address(this), _params.amtBUser);
     IERC20(lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
+
     bank.execute(
       _positionId,
       _spell,
@@ -132,7 +133,7 @@ contract PangolinSpellV2Integration is BaseIntegration {
         addLiquiditySelector,
         _params.tokenA,
         _params.tokenB,
-        IPangolinSpellV2.Amounts(
+        ITraderJoeSpellV3.Amounts(
           _params.amtAUser,
           _params.amtBUser,
           _params.amtLPUser,
@@ -168,7 +169,7 @@ contract PangolinSpellV2Integration is BaseIntegration {
         removeLiquiditySelector,
         _params.tokenA,
         _params.tokenB,
-        IPangolinSpellV2.RepayAmounts(
+        ITraderJoeSpellV3.RepayAmounts(
           _params.amtLPTake,
           _params.amtLPWithdraw,
           _params.amtARepay,
@@ -201,12 +202,19 @@ contract PangolinSpellV2Integration is BaseIntegration {
     (, address collateralTokenAddress, uint collateralId, uint collateralAmount) = bank
       .getPositionInfo(_positionId);
 
-    IWMiniChefV2PNG wrapper = IWMiniChefV2PNG(collateralTokenAddress);
-    IMiniChefV2PNG chef = IMiniChefV2PNG(wrapper.chef());
+    IWBoostedMasterChefJoeWorker wrapper = IWBoostedMasterChefJoeWorker(collateralTokenAddress);
+    IBoostedMasterChefJoe chef = IBoostedMasterChefJoe(wrapper.chef());
 
     // get info for calculating rewards
     (uint pid, uint startRewardTokenPerShare) = wrapper.decodeId(collateralId);
-    uint endRewardTokenPerShare = calculateAccRewardPerShareMinichef(chef, pid);
+    uint endRewardTokenPerShare = wrapper.accJoePerShare();
+    (uint totalSupply, , ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
+
+    // pending rewards separates into two parts
+    // 1. pending rewards that are in the wrapper contract
+    // 2. pending rewards that wrapper hasn't claimed from Chef's contract
+    (uint pendingRewardFromChef, , , ) = chef.pendingTokens(pid, address(wrapper));
+    endRewardTokenPerShare += (pendingRewardFromChef * PRECISION) / totalSupply;
 
     uint stReward = (startRewardTokenPerShare * collateralAmount).divCeil(PRECISION);
     uint enReward = (endRewardTokenPerShare * collateralAmount) / PRECISION;
@@ -214,39 +222,13 @@ contract PangolinSpellV2Integration is BaseIntegration {
     pendingRewards = (enReward > stReward) ? enReward - stReward : 0;
   }
 
-  function calculateAccRewardPerShareMinichef(IMiniChefV2PNG _chef, uint _pid)
-    internal
-    view
-    returns (uint accRewardPerShare)
-  {
-    uint lastRewardTime;
-    uint allocPoint;
-    (accRewardPerShare, lastRewardTime, allocPoint) = _chef.poolInfo(_pid);
-    IERC20 lpToken = IERC20(_chef.lpToken(_pid));
-    uint lpSupply = lpToken.balanceOf(address(this));
-    uint rewardsExpiration = _chef.rewardsExpiration();
-    uint currentTimestamp = block.timestamp;
-    uint totalAllocPoint = _chef.totalAllocPoint();
-    uint rewardPerSecond = _chef.rewardPerSecond();
-
-    if (currentTimestamp > lastRewardTime && lpSupply != 0) {
-      uint time = currentTimestamp <= rewardsExpiration
-        ? currentTimestamp - lastRewardTime // Accrue rewards until now
-        : rewardsExpiration > lastRewardTime
-        ? rewardsExpiration - lastRewardTime // Accrue rewards until expiration
-        : 0; // No rewards to accrue
-      uint reward = (time * rewardPerSecond * allocPoint) / totalAllocPoint;
-      accRewardPerShare += (reward * PRECISION) / lpSupply;
-    }
-  }
-
   function getRewardToken(uint _positionId) internal view returns (address rewardToken) {
     // query position info from position id
     (, address collateralTokenAddress, , ) = bank.getPositionInfo(_positionId);
 
-    IWMiniChefV2PNG wrapper = IWMiniChefV2PNG(collateralTokenAddress);
+    IWBoostedMasterChefJoeWorker wrapper = IWBoostedMasterChefJoeWorker(collateralTokenAddress);
 
     // find reward token address from wrapper
-    rewardToken = address(wrapper.png());
+    rewardToken = address(wrapper.joe());
   }
 }
