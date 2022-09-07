@@ -76,7 +76,7 @@ contract BeetsSpellV1Test is UtilsFTM {
         testReducePosition(positionId);
     }
 
-    function testOpenPosition() public returns (uint256 positionId) {
+    function testOpenPosition() internal returns (uint256 positionId) {
         uint256[] memory amtsUser = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
             amtsUser[i] = (10 * 10**IERC20Metadata(tokens[i]).decimals());
@@ -139,7 +139,7 @@ contract BeetsSpellV1Test is UtilsFTM {
         );
     }
 
-    function testIncreasePosition(uint256 _positionId) public {
+    function testIncreasePosition(uint256 _positionId) internal {
         // increase block number to calculate more rewards
         vm.roll(block.number + 10000);
 
@@ -221,7 +221,7 @@ contract BeetsSpellV1Test is UtilsFTM {
         );
     }
 
-    function testReducePosition(uint256 _positionId) public {
+    function testReducePosition(uint256 _positionId) internal {
         // increase block number to calculate more rewards
         vm.roll(block.number + 10000);
 
@@ -301,7 +301,7 @@ contract BeetsSpellV1Test is UtilsFTM {
         );
     }
 
-    function testHarvestRewards(uint256 _positionId) public {
+    function testHarvestRewards(uint256 _positionId) internal {
         // increase block number to calculate more rewards
         vm.roll(block.number + 10000);
 
@@ -334,7 +334,7 @@ contract BeetsSpellV1Test is UtilsFTM {
         );
     }
 
-    function testGetPendingRewards(uint256 _positionId) public {
+    function testGetPendingRewards(uint256 _positionId) internal {
         // increase block number to calculate more rewards
         vm.roll(block.number + 10000);
 
