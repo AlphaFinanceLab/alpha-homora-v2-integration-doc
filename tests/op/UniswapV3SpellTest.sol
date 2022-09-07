@@ -77,6 +77,8 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     testHarvestFee(positionId);
     testReducePosition(positionId);
     testClosePosition(positionId);
+
+    testOpenPositionWithOptimalSwap();
   }
 
   function testOpenPosition() internal returns (uint positionId) {
