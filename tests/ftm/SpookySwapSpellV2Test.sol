@@ -66,7 +66,7 @@ contract SpookySwapSpellV2Test is UtilsFTM {
         testReducePosition(positionId);
     }
 
-    function testOpenPosition() public returns (uint256 positionId) {
+    function testOpenPosition() internal returns (uint256 positionId) {
         uint256 amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
         uint256 amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
         uint256 amtLPUser = 100;
@@ -123,7 +123,7 @@ contract SpookySwapSpellV2Test is UtilsFTM {
         );
     }
 
-    function testIncreasePosition(uint256 _positionId) public {
+    function testIncreasePosition(uint256 _positionId) internal {
         // increase block timestamp to calculate more rewards
         vm.warp(block.timestamp + 10000);
 
@@ -196,7 +196,7 @@ contract SpookySwapSpellV2Test is UtilsFTM {
         );
     }
 
-    function testReducePosition(uint256 _positionId) public {
+    function testReducePosition(uint256 _positionId) internal {
         // increase block timestamp to calculate more rewards
         vm.warp(block.timestamp + 10000);
 
@@ -266,7 +266,7 @@ contract SpookySwapSpellV2Test is UtilsFTM {
         );
     }
 
-    function testHarvestRewards(uint256 _positionId) public {
+    function testHarvestRewards(uint256 _positionId) internal {
         // increase block timestamp to calculate more rewards
         vm.warp(block.timestamp + 10000);
 
@@ -297,7 +297,7 @@ contract SpookySwapSpellV2Test is UtilsFTM {
         );
     }
 
-    function testGetPendingRewards(uint256 _positionId) public {
+    function testGetPendingRewards(uint256 _positionId) internal {
         // increase block timestamp to calculate more rewards
         vm.warp(block.timestamp + 10000);
 
