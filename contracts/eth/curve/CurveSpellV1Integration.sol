@@ -232,7 +232,6 @@ contract CurveSpellV1Integration is BaseIntegration {
     // get info for calculating rewards
     (uint pid, uint gid, uint startRewardTokenPerShare) = wrapper.decodeId(collateralId);
 
-    address lp = wrapper.getUnderlyingTokenFromIds(pid, gid);
     (address gauge, uint endRewardTokenPerShare) = wrapper.gauges(pid, gid);
     uint totalSupply = IERC20(gauge).balanceOf(address(wrapper)); // total gauge share of wrapper
 
