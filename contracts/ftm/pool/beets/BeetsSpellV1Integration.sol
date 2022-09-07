@@ -32,6 +32,8 @@ contract BeetsSpellV1Integration is BaseIntegration {
     // harvestWMasterChef()
     bytes4 harvestRewardsSelector = 0x40a65ad2;
 
+    uint256 constant PRECISION = 10**12;
+
     struct AddLiquidityParams {
         bytes32 poolId; // poolId in Vault
         uint256[] amtsUser; // Supplied tokens amount
@@ -116,6 +118,7 @@ contract BeetsSpellV1Integration is BaseIntegration {
         (address[] memory tokens, address lp) = getPoolTokensAndLp(
             _params.poolId
         );
+        address rewardToken = getRewardToken(_positionId);
 
         // approve tokens
         for (uint256 i = 0; i < tokens.length; i++) {
@@ -159,6 +162,7 @@ contract BeetsSpellV1Integration is BaseIntegration {
             doRefund(tokens[i]);
         }
         doRefund(lp);
+        doRefund(rewardToken);
     }
 
     function reducePosition(
@@ -169,6 +173,7 @@ contract BeetsSpellV1Integration is BaseIntegration {
         (address[] memory tokens, address lp) = getPoolTokensAndLp(
             _params.poolId
         );
+        address rewardToken = getRewardToken(_positionId);
 
         bank.execute(
             _positionId,
@@ -191,8 +196,7 @@ contract BeetsSpellV1Integration is BaseIntegration {
             doRefund(tokens[i]);
         }
         doRefund(lp);
-
-        // todo: return reward token
+        doRefund(rewardToken);
     }
 
     function harvestRewards(address _spell, uint256 _positionId) external {
@@ -202,7 +206,70 @@ contract BeetsSpellV1Integration is BaseIntegration {
             abi.encodeWithSelector(harvestRewardsSelector)
         );
 
+        address rewardToken = getRewardToken(_positionId);
+
+        doRefund(rewardToken);
+    }
+
+    function getPendingRewards(uint256 _positionId)
+        external
+        view
+        returns (uint256 pendingRewards)
+    {
         // query position info from position id
+        (
+            ,
+            address collateralTokenAddress,
+            uint256 collateralId,
+            uint256 collateralAmount
+        ) = bank.getPositionInfo(_positionId);
+
+        IWMasterChefBeetsWorker wrapper = IWMasterChefBeetsWorker(
+            collateralTokenAddress
+        );
+        IMasterChefBeets chef = IMasterChefBeets(wrapper.chef());
+
+        // get info for calculating rewards
+        (uint256 pid, uint256 startRewardTokenPerShare) = wrapper.decodeId(
+            collateralId
+        );
+        uint256 endRewardTokenPerShare = wrapper.accRewardPerShare();
+        (uint256 totalSupply, ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
+
+        // pending rewards separates into two parts
+        // 1. pending rewards that are in the wrapper contract
+        // 2. pending rewards that wrapper hasn't claimed from Chef's contract
+        uint256 pendingRewardFromChef = chef.pendingBeets(
+            pid,
+            address(wrapper)
+        );
+        endRewardTokenPerShare +=
+            (pendingRewardFromChef * PRECISION) /
+            totalSupply;
+
+        uint256 stReward = (startRewardTokenPerShare * collateralAmount)
+            .divCeil(PRECISION);
+        uint256 enReward = (endRewardTokenPerShare * collateralAmount) /
+            PRECISION;
+
+        pendingRewards = (enReward > stReward) ? enReward - stReward : 0;
+    }
+
+    function getPoolTokensAndLp(bytes32 _poolId)
+        internal
+        view
+        returns (address[] memory tokens, address lp)
+    {
+        (lp, ) = vault.getPool(_poolId);
+        (tokens, , ) = vault.getPoolTokens(_poolId);
+    }
+
+    function getRewardToken(uint256 _positionId)
+        internal
+        view
+        returns (address rewardToken)
+    {
+        // get collateral information from position id
         (, address collateralTokenAddress, , ) = bank.getPositionInfo(
             _positionId
         );
@@ -211,63 +278,7 @@ contract BeetsSpellV1Integration is BaseIntegration {
             collateralTokenAddress
         );
 
-        // find reward token address from wrapper
-        address rewardToken = address(wrapper.rewardToken());
-
-        doRefund(rewardToken);
-    }
-
-    // function getPendingRewards(uint256 _positionId)
-    //     external
-    //     view
-    //     returns (uint256 pendingRewards)
-    // {
-    //     // query position info from position id
-    //     (
-    //         ,
-    //         address collateralTokenAddress,
-    //         uint256 collateralId,
-    //         uint256 collateralAmount
-    //     ) = bank.getPositionInfo(_positionId);
-
-    //     IWMasterChefBeetsWorker wrapper = IWMasterChefBeetsWorker(
-    //         collateralTokenAddress
-    //     );
-    //     IMasterChefBeets chef = IMasterChefBeets(wrapper.chef());
-
-    //     // get info for calculating rewards
-    //     (uint256 pid, uint256 startTokenPerShare) = wrapper.decodeId(
-    //         collateralId
-    //     );
-    //     uint256 endTokenPerShare = wrapper.accRewardPerShare();
-    //     (uint256 totalSupply, ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
-
-    //     // pending rewards separates into two parts
-    //     // 1. pending rewards that are in the wrapper contract
-    //     uint256 PRECISION = 10**12;
-    //     uint256 stReward = (startTokenPerShare * collateralAmount).divCeil(
-    //         PRECISION
-    //     );
-    //     uint256 enReward = (endTokenPerShare * collateralAmount) / PRECISION;
-    //     uint256 userPendingRewardsFromWrapper = (enReward > stReward)
-    //         ? enReward - stReward
-    //         : 0;
-
-    //     // 2. pending rewards that wrapper hasn't claimed from Chef's contract
-    //     uint256 pendingRewardFromChef = chef.pendingBOO(pid, address(wrapper));
-    //     uint256 userPendingRewardFromChef = (collateralAmount *
-    //         pendingRewardFromChef) / totalSupply;
-
-    //     pendingRewards =
-    //         userPendingRewardsFromWrapper +
-    //         userPendingRewardFromChef;
-    // }
-
-    function getPoolTokensAndLp(bytes32 _poolId)
-        internal
-        returns (address[] memory tokens, address lp)
-    {
-        (lp, ) = vault.getPool(_poolId);
-        (tokens, , ) = vault.getPoolTokens(_poolId);
+        // find reward token address
+        rewardToken = address(wrapper.rewardToken());
     }
 }

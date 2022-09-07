@@ -38,4 +38,9 @@ interface IMasterChefBeets {
         external
         view
         returns (uint256, int256);
+
+    function pendingBeets(uint256 _pid, address _user)
+        external
+        view
+        returns (uint256 pending);
 }
