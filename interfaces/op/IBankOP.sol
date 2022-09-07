@@ -4,7 +4,7 @@ pragma solidity 0.8.16;
 
 import "../IBank.sol";
 
-interface IBankAVAX is IBank {
+interface IBankOP is IBank {
   struct CreditLimit {
     address user; // The whitelisted user address to set credit limit.
     address token; // The token address to set credit limit.
