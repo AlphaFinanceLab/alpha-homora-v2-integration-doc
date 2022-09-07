@@ -47,7 +47,7 @@ interface IUniswapV3Spell {
     uint256 amt0Min; // minimum amount of token0 gain after remove liquidity and repay debt.
     uint256 amt1Min; // minimum amount of token1 gain after remove liquidity and repay debt.
     uint256 deadline; // deadline for decreaseLiquidity.
-    bool convertWETH; // deadline for decreaseLiquidity.
+    bool convertWETH; // convert weth to eth or not (true -> convert to eth)
   }
 
   struct ReinvestParams {
