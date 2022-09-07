@@ -227,11 +227,11 @@ contract UniswapV2SpellV1Integration is BaseIntegration {
     uint enReward = (endRewardTokenPerShare * collateralAmount) / PRECISION;
     uint userPendingRewardsFromWrapper = (enReward > stReward) ? enReward - stReward : 0;
 
-    // 2. pending rewards that wrapper hasn't claimed from Chef's contract
+    // 2. pending rewards that wrapper hasn't claimed from Staking's contract
     uint pendingRewardFromStaking = staking.earned(address(wrapper));
-    uint userPendingRewardFromChef = (collateralAmount * pendingRewardFromStaking) / totalSupply;
+    uint userPendingRewardFromStaking = (collateralAmount * pendingRewardFromStaking) / totalSupply;
 
-    pendingRewards = userPendingRewardsFromWrapper + userPendingRewardFromChef;
+    pendingRewards = userPendingRewardsFromWrapper + userPendingRewardFromStaking;
   }
 
   function getRewardToken(uint _positionId) internal view returns (address rewardToken) {

@@ -238,7 +238,7 @@ contract CurveSpellV1Integration is BaseIntegration {
 
     // pending rewards separates into two parts
     // 1. pending rewards that are in the wrapper contract
-    // 2. pending rewards that wrapper hasn't claimed from Chef's contract
+    // 2. pending rewards that wrapper hasn't claimed from Gauge's contract
     uint pendingRewardFromGauge = ILiquidityGauge(gauge).claimable_tokens(address(wrapper));
     endRewardTokenPerShare += (pendingRewardFromGauge * PRECISION) / totalSupply;
 
