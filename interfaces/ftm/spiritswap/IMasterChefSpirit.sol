@@ -26,4 +26,9 @@ interface IMasterChefSpirit {
         external
         view
         returns (uint256, int256);
+
+    function pendingSpirit(uint256 _pid, address _user)
+        external
+        view
+        returns (uint256);
 }

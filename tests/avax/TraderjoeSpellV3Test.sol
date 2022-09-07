@@ -77,7 +77,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
         testReducePosition(positionId);
     }
 
-    function testOpenPosition() public returns (uint256 positionId) {
+    function testOpenPosition() internal returns (uint256 positionId) {
         uint256 amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
         uint256 amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
         uint256 amtLPUser = 100;
@@ -134,7 +134,22 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
         );
     }
 
-    function testIncreasePosition(uint256 _positionId) public {
+    function testIncreasePosition(uint256 _positionId) internal {
+        // increase block timestamp to calculate more rewards
+        vm.warp(block.timestamp + 10000);
+
+        // get collateral information from position id
+        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
+            _positionId
+        );
+
+        IWBoostedMasterChefJoeWorker wrapper = IWBoostedMasterChefJoeWorker(
+            collateralTokenAddress
+        );
+
+        // find reward token address
+        address rewardToken = address(wrapper.joe());
+
         uint256 amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
         uint256 amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
         uint256 amtLPUser = 100;
@@ -148,6 +163,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
         uint256 userBalanceTokenA_before = balanceOf(tokenA, alice);
         uint256 userBalanceTokenB_before = balanceOf(tokenB, alice);
         uint256 userBalanceLP_before = balanceOf(lp, alice);
+        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
 
         // call contract
         vm.startPrank(alice);
@@ -174,6 +190,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
         uint256 userBalanceTokenA_after = balanceOf(tokenA, alice);
         uint256 userBalanceTokenB_after = balanceOf(tokenB, alice);
         uint256 userBalanceLP_after = balanceOf(lp, alice);
+        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
 
         require(
             userBalanceTokenA_before > userBalanceTokenA_after,
@@ -187,11 +204,26 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
             userBalanceLP_before > userBalanceLP_after,
             "incorrect user balance of lp"
         );
+        require(
+            userBalanceReward_after > userBalanceReward_before,
+            "incorrect user balance of reward token"
+        );
     }
 
-    function testReducePosition(uint256 _positionId) public {
+    function testReducePosition(uint256 _positionId) internal {
+        // increase block timestamp to calculate more rewards
+        vm.warp(block.timestamp + 10000);
+
         // get collateral information from position id
-        (, , , uint256 collateralAmount) = bank.getPositionInfo(_positionId);
+        (, address collateralTokenAddress, , uint256 collateralAmount) = bank
+            .getPositionInfo(_positionId);
+
+        IWBoostedMasterChefJoeWorker wrapper = IWBoostedMasterChefJoeWorker(
+            collateralTokenAddress
+        );
+
+        // find reward token address
+        address rewardToken = address(wrapper.joe());
 
         uint256 amtLPTake = collateralAmount; // withdraw 100% of position
         uint256 amtLPWithdraw = 100; // return only 100 LP to user
@@ -205,6 +237,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
         uint256 userBalanceTokenA_before = balanceOf(tokenA, alice);
         uint256 userBalanceTokenB_before = balanceOf(tokenB, alice);
         uint256 userBalanceLP_before = balanceOf(lp, alice);
+        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
 
         // call contract
         vm.startPrank(alice);
@@ -229,6 +262,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
         uint256 userBalanceTokenA_after = balanceOf(tokenA, alice);
         uint256 userBalanceTokenB_after = balanceOf(tokenB, alice);
         uint256 userBalanceLP_after = balanceOf(lp, alice);
+        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
 
         require(
             userBalanceTokenA_after > userBalanceTokenA_before,
@@ -242,9 +276,13 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
             userBalanceLP_after - userBalanceLP_before == amtLPWithdraw,
             "incorrect user balance of LP"
         );
+        require(
+            userBalanceReward_after > userBalanceReward_before,
+            "incorrect user balance of reward token"
+        );
     }
 
-    function testHarvestRewards(uint256 _positionId) public {
+    function testHarvestRewards(uint256 _positionId) internal {
         // increase block timestamp to calculate more rewards
         vm.warp(block.timestamp + 10000);
 
@@ -277,7 +315,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
         );
     }
 
-    function testGetPendingRewards(uint256 _positionId) public {
+    function testGetPendingRewards(uint256 _positionId) internal {
         // increase block timestamp to calculate more rewards
         vm.warp(block.timestamp + 10000);
 
@@ -285,6 +323,33 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
         uint256 pendingRewards = integration.getPendingRewards(_positionId);
         require(pendingRewards > 0, "pending rewards should be more than 0");
 
+        // query position info from position id
+        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
+            _positionId
+        );
+
+        IWBoostedMasterChefJoeWorker wrapper = IWBoostedMasterChefJoeWorker(
+            collateralTokenAddress
+        );
+
+        // find reward token address
+        address rewardToken = address(wrapper.joe());
+
+        // user info before
+        uint256 userBalanceReward_before = balanceOf(rewardToken, alice);
+
+        // call contract
+        vm.startPrank(alice);
+        integration.harvestRewards(address(spell), _positionId);
+        vm.stopPrank();
+
+        // user info after
+        uint256 userBalanceReward_after = balanceOf(rewardToken, alice);
+
+        uint256 claimedRewards = userBalanceReward_after -
+            userBalanceReward_before;
         console2.log("pendingRewards:", pendingRewards);
+        console2.log("claimedRewards:", claimedRewards);
+        require(pendingRewards == claimedRewards, "unexpected reward amount");
     }
 }

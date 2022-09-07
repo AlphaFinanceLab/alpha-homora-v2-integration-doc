@@ -3,24 +3,6 @@
 pragma solidity 0.8.16;
 
 interface IBoostedMasterChefJoe {
-    struct UserInfo {
-        uint256 amount;
-        uint256 rewardDebt;
-        uint256 factor;
-    }
-
-    struct PoolInfo {
-        address lpToken;
-        uint96 allocPoint;
-        uint256 accJoePerShare;
-        uint256 accJoePerFactorPerShare;
-        uint64 lastRewardTimestamp;
-        address rewarder;
-        uint32 veJoeShareBp;
-        uint256 totalFactor;
-        uint256 totalLpSupply;
-    }
-
     /// @notice Address of MCJV2 contract
     function MASTER_CHEF_V2() external view returns (address);
 
@@ -34,10 +16,30 @@ interface IBoostedMasterChefJoe {
     function MASTER_PID() external view returns (uint256);
 
     /// @notice Info of each BMCJ pool
-    function poolInfo(uint256 pid) external view returns (PoolInfo memory);
+    function poolInfo(uint256 pid)
+        external
+        view
+        returns (
+            address lpToken,
+            uint96 allocPoint,
+            uint256 accJoePerShare,
+            uint256 accJoePerFactorPerShare,
+            uint64 lastRewardTimestamp,
+            address rewarder,
+            uint32 veJoeShareBp,
+            uint256 totalFactor,
+            uint256 totalLpSupply
+        );
 
     /// @notice Info of each user that stakes LP tokens
-    function userInfo(uint256, address) external view returns (UserInfo memory);
+    function userInfo(uint256, address)
+        external
+        view
+        returns (
+            uint256 amount,
+            uint256 rewardDebt,
+            uint256 factor
+        );
 
     /// @dev Total allocation points. Must be the sum of all allocation points in all pools
     function totalAllocPoint() external view returns (uint256);

@@ -32,6 +32,8 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
     // harvestWMasterChef()
     bytes4 harvestRewardsSelector = 0x40a65ad2;
 
+    uint256 constant PRECISION = 10**12;
+
     struct AddLiquidityParams {
         address tokenA; // The first token of pool
         address tokenB; // The second token of pool
@@ -124,6 +126,7 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
         AddLiquidityParams memory _params
     ) external {
         address lp = factory.getPair(_params.tokenA, _params.tokenB);
+        address rewardToken = getRewardToken(_positionId);
 
         // approve tokens
         ensureApprove(_params.tokenA, address(bank));
@@ -172,6 +175,7 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
         doRefund(_params.tokenA);
         doRefund(_params.tokenB);
         doRefund(lp);
+        doRefund(rewardToken);
     }
 
     function reducePosition(
@@ -180,6 +184,7 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
         RemoveLiquidityParams memory _params
     ) external {
         address lp = factory.getPair(_params.tokenA, _params.tokenB);
+        address rewardToken = getRewardToken(_positionId);
 
         bank.execute(
             _positionId,
@@ -204,6 +209,7 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
         doRefund(_params.tokenA);
         doRefund(_params.tokenB);
         doRefund(lp);
+        doRefund(rewardToken);
     }
 
     function harvestRewards(address _spell, uint256 _positionId) external {
@@ -213,15 +219,7 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
             abi.encodeWithSelector(harvestRewardsSelector)
         );
 
-        // query position info from position id
-        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
-            _positionId
-        );
-
-        IWMasterChefBooV2 wrapper = IWMasterChefBooV2(collateralTokenAddress);
-
-        // find reward token address from wrapper
-        address rewardToken = address(wrapper.rewardToken());
+        address rewardToken = getRewardToken(_positionId);
 
         doRefund(rewardToken);
     }
@@ -243,30 +241,41 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
         IMasterChefBooV2 chef = IMasterChefBooV2(wrapper.chef());
 
         // get info for calculating rewards
-        (uint256 pid, uint256 startTokenPerShare) = wrapper.decodeId(
+        (uint256 pid, uint256 startRewardTokenPerShare) = wrapper.decodeId(
             collateralId
         );
-        uint256 endTokenPerShare = wrapper.accRewardPerShare();
+        uint256 endRewardTokenPerShare = wrapper.accRewardPerShare();
         (uint256 totalSupply, ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
 
         // pending rewards separates into two parts
         // 1. pending rewards that are in the wrapper contract
-        uint256 PRECISION = 10**12;
-        uint256 stReward = (startTokenPerShare * collateralAmount).divCeil(
-            PRECISION
-        );
-        uint256 enReward = (endTokenPerShare * collateralAmount) / PRECISION;
-        uint256 userPendingRewardsFromWrapper = (enReward > stReward)
-            ? enReward - stReward
-            : 0;
-
         // 2. pending rewards that wrapper hasn't claimed from Chef's contract
         uint256 pendingRewardFromChef = chef.pendingBOO(pid, address(wrapper));
-        uint256 userPendingRewardFromChef = (collateralAmount *
-            pendingRewardFromChef) / totalSupply;
+        endRewardTokenPerShare +=
+            (pendingRewardFromChef * PRECISION) /
+            totalSupply;
 
-        pendingRewards =
-            userPendingRewardsFromWrapper +
-            userPendingRewardFromChef;
+        uint256 stReward = (startRewardTokenPerShare * collateralAmount)
+            .divCeil(PRECISION);
+        uint256 enReward = (endRewardTokenPerShare * collateralAmount) /
+            PRECISION;
+
+        pendingRewards = (enReward > stReward) ? enReward - stReward : 0;
+    }
+
+    function getRewardToken(uint256 _positionId)
+        internal
+        view
+        returns (address rewardToken)
+    {
+        // query position info from position id
+        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
+            _positionId
+        );
+
+        IWMasterChefBooV2 wrapper = IWMasterChefBooV2(collateralTokenAddress);
+
+        // find reward token address from wrapper
+        rewardToken = address(wrapper.rewardToken());
     }
 }

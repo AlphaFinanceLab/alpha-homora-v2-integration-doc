@@ -32,6 +32,8 @@ contract SpiritSwapSpellV1Integration is BaseIntegration {
     // harvestWMasterChef()
     bytes4 harvestRewardsSelector = 0x40a65ad2;
 
+    uint256 constant PRECISION = 10**12;
+
     struct AddLiquidityParams {
         address tokenA; // The first token of pool
         address tokenB; // The second token of pool
@@ -124,6 +126,7 @@ contract SpiritSwapSpellV1Integration is BaseIntegration {
         AddLiquidityParams memory _params
     ) external {
         address lp = factory.getPair(_params.tokenA, _params.tokenB);
+        address rewardToken = getRewardToken(_positionId);
 
         // approve tokens
         ensureApprove(_params.tokenA, address(bank));
@@ -172,6 +175,7 @@ contract SpiritSwapSpellV1Integration is BaseIntegration {
         doRefund(_params.tokenA);
         doRefund(_params.tokenB);
         doRefund(lp);
+        doRefund(rewardToken);
     }
 
     function reducePosition(
@@ -180,6 +184,7 @@ contract SpiritSwapSpellV1Integration is BaseIntegration {
         RemoveLiquidityParams memory _params
     ) external {
         address lp = factory.getPair(_params.tokenA, _params.tokenB);
+        address rewardToken = getRewardToken(_positionId);
 
         bank.execute(
             _positionId,
@@ -204,6 +209,7 @@ contract SpiritSwapSpellV1Integration is BaseIntegration {
         doRefund(_params.tokenA);
         doRefund(_params.tokenB);
         doRefund(lp);
+        doRefund(rewardToken);
     }
 
     function harvestRewards(address _spell, uint256 _positionId) external {
@@ -232,8 +238,12 @@ contract SpiritSwapSpellV1Integration is BaseIntegration {
         returns (uint256 pendingRewards)
     {
         // query position info from position id
-        (, address collateralTokenAddress, uint256 collateralId, ) = bank
-            .getPositionInfo(_positionId);
+        (
+            ,
+            address collateralTokenAddress,
+            uint256 collateralId,
+            uint256 collateralAmount
+        ) = bank.getPositionInfo(_positionId);
 
         IWMasterChefSpirit wrapper = IWMasterChefSpirit(collateralTokenAddress);
         IMasterChefSpirit chef = IMasterChefSpirit(wrapper.chef());
@@ -245,13 +255,38 @@ contract SpiritSwapSpellV1Integration is BaseIntegration {
         (, , , uint256 endRewardTokenPerShare, ) = chef.poolInfo(pid);
         (uint256 totalSupply, ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
 
-        // calculate pending rewards
-        uint256 PRECISION = 1e12;
-        uint256 stReward = (startRewardTokenPerShare * totalSupply).divCeil(
-            PRECISION
+        // pending rewards separates into two parts
+        // 1. pending rewards that are in the wrapper contract
+        // 2. pending rewards that wrapper hasn't claimed from Chef's contract
+        uint256 pendingRewardFromChef = chef.pendingSpirit(
+            pid,
+            address(wrapper)
         );
-        uint256 enReward = (endRewardTokenPerShare * totalSupply) / PRECISION;
+        endRewardTokenPerShare +=
+            (pendingRewardFromChef * PRECISION) /
+            totalSupply;
+
+        uint256 stReward = (startRewardTokenPerShare * collateralAmount)
+            .divCeil(PRECISION);
+        uint256 enReward = (endRewardTokenPerShare * collateralAmount) /
+            PRECISION;
 
         pendingRewards = (enReward > stReward) ? enReward - stReward : 0;
+    }
+
+    function getRewardToken(uint256 _positionId)
+        internal
+        view
+        returns (address rewardToken)
+    {
+        // query position info from position id
+        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
+            _positionId
+        );
+
+        IWMasterChefSpirit wrapper = IWMasterChefSpirit(collateralTokenAddress);
+
+        // find reward token address from wrapper
+        rewardToken = address(wrapper.rewardToken());
     }
 }
