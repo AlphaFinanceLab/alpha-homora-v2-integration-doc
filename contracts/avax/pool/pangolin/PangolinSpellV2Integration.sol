@@ -2,283 +2,232 @@
 
 pragma solidity 0.8.16;
 
-import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.sol';
+import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol';
+import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
-import "../../../BaseIntegration.sol";
-import "../../../utils/HomoraMath.sol";
-import "../../../../interfaces/avax/IBankAVAX.sol";
-import "../../../../interfaces/avax/pangolin/IMiniChefV2PNG.sol";
-import "../../../../interfaces/avax/pangolin/IWMiniChefV2PNG.sol";
-import "../../../../interfaces/avax/pangolin/IPangolinSpellV2.sol";
-import "../../../../interfaces/avax/pangolin/IPangolinFactory.sol";
+import '../../../BaseIntegration.sol';
+import '../../../utils/HomoraMath.sol';
+import '../../../../interfaces/avax/IBankAVAX.sol';
+import '../../../../interfaces/avax/pangolin/IMiniChefV2PNG.sol';
+import '../../../../interfaces/avax/pangolin/IWMiniChefV2PNG.sol';
+import '../../../../interfaces/avax/pangolin/IPangolinSpellV2.sol';
+import '../../../../interfaces/avax/pangolin/IPangolinFactory.sol';
 
-import "forge-std/console2.sol";
+import 'forge-std/console2.sol';
 
 contract PangolinSpellV2Integration is BaseIntegration {
-    using SafeERC20 for IERC20;
-    using HomoraMath for uint256;
+  using SafeERC20 for IERC20;
+  using HomoraMath for uint;
 
-    IBankAVAX bank; // homora bank
-    IPangolinFactory factory; // pangolin factory
+  IBankAVAX bank; // homora bank
+  IPangolinFactory factory; // pangolin factory
 
-    // addLiquidityWMiniChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint256)
-    bytes4 addLiquiditySelector = 0x2951434c;
+  // addLiquidityWMiniChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint256)
+  bytes4 addLiquiditySelector = 0x2951434c;
 
-    // removeLiquidityWMiniChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256))
-    bytes4 removeLiquiditySelector = 0xde1ecfce;
+  // removeLiquidityWMiniChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256))
+  bytes4 removeLiquiditySelector = 0xde1ecfce;
 
-    // harvestWMiniChefRewards()
-    bytes4 harvestRewardsSelector = 0x32032b5a;
+  // harvestWMiniChefRewards()
+  bytes4 harvestRewardsSelector = 0x32032b5a;
 
-    uint256 constant PRECISION = 10**12;
+  uint constant PRECISION = 10**12;
 
-    struct AddLiquidityParams {
-        address tokenA; // The first token of pool
-        address tokenB; // The second token of pool
-        uint256 amtAUser; // Supplied tokenA amount
-        uint256 amtBUser; // Supplied tokenB amount
-        uint256 amtLPUser; // Supplied LP token amount
-        uint256 amtABorrow; // Borrow tokenA amount
-        uint256 amtBBorrow; // Borrow tokenB amount
-        uint256 amtLPBorrow; // Borrow LP token amount
-        uint256 amtAMin; // Desired tokenA amount (slippage control)
-        uint256 amtBMin; // Desired tokenB amount (slippage control)
-        uint256 pid; // pool id of MinichefV2
-    }
+  struct AddLiquidityParams {
+    address tokenA; // The first token of pool
+    address tokenB; // The second token of pool
+    uint amtAUser; // Supplied tokenA amount
+    uint amtBUser; // Supplied tokenB amount
+    uint amtLPUser; // Supplied LP token amount
+    uint amtABorrow; // Borrow tokenA amount
+    uint amtBBorrow; // Borrow tokenB amount
+    uint amtLPBorrow; // Borrow LP token amount
+    uint amtAMin; // Desired tokenA amount (slippage control)
+    uint amtBMin; // Desired tokenB amount (slippage control)
+    uint pid; // pool id of MinichefV2
+  }
 
-    struct RemoveLiquidityParams {
-        address tokenA; // The first token of pool
-        address tokenB; // The second token of pool
-        uint256 amtLPTake; // Amount of LP being removed from the position
-        uint256 amtLPWithdraw; // Amount of LP being received from removing the position (remaining will be converted to tokenA, tokenB)
-        uint256 amtARepay; // Repay tokenA amount
-        uint256 amtBRepay; // Repay tokenB amount
-        uint256 amtLPRepay; // Repay LP token amount
-        uint256 amtAMin; // Desired tokenA amount
-        uint256 amtBMin; // Desired tokenB amount
-    }
+  struct RemoveLiquidityParams {
+    address tokenA; // The first token of pool
+    address tokenB; // The second token of pool
+    uint amtLPTake; // Amount of LP being removed from the position
+    uint amtLPWithdraw; // Amount of LP being received from removing the position (remaining will be converted to tokenA, tokenB)
+    uint amtARepay; // Repay tokenA amount
+    uint amtBRepay; // Repay tokenB amount
+    uint amtLPRepay; // Repay LP token amount
+    uint amtAMin; // Desired tokenA amount
+    uint amtBMin; // Desired tokenB amount
+  }
 
-    constructor(IBankAVAX _bank, IPangolinFactory _factory) {
-        bank = _bank;
-        factory = _factory;
-    }
+  constructor(IBankAVAX _bank, IPangolinFactory _factory) {
+    bank = _bank;
+    factory = _factory;
+  }
 
-    function openPosition(address _spell, AddLiquidityParams memory _params)
-        external
-        returns (uint256 positionId)
-    {
-        address lp = factory.getPair(_params.tokenA, _params.tokenB);
+  function openPosition(address _spell, AddLiquidityParams memory _params)
+    external
+    returns (uint positionId)
+  {
+    address lp = factory.getPair(_params.tokenA, _params.tokenB);
 
-        // approve tokens
-        ensureApprove(_params.tokenA, address(bank));
-        ensureApprove(_params.tokenB, address(bank));
-        ensureApprove(lp, address(bank));
+    // approve tokens
+    ensureApprove(_params.tokenA, address(bank));
+    ensureApprove(_params.tokenB, address(bank));
+    ensureApprove(lp, address(bank));
 
-        // transfer tokens from user
-        IERC20(_params.tokenA).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _params.amtAUser
-        );
-        IERC20(_params.tokenB).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _params.amtBUser
-        );
-        IERC20(lp).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _params.amtLPUser
-        );
+    // transfer tokens from user
+    IERC20(_params.tokenA).safeTransferFrom(msg.sender, address(this), _params.amtAUser);
+    IERC20(_params.tokenB).safeTransferFrom(msg.sender, address(this), _params.amtBUser);
+    IERC20(lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
 
-        positionId = bank.execute(
-            0, // (0 is reserved for opening new position)
-            _spell,
-            abi.encodeWithSelector(
-                addLiquiditySelector,
-                _params.tokenA,
-                _params.tokenB,
-                IPangolinSpellV2.Amounts(
-                    _params.amtAUser,
-                    _params.amtBUser,
-                    _params.amtLPUser,
-                    _params.amtABorrow,
-                    _params.amtBBorrow,
-                    _params.amtLPBorrow,
-                    _params.amtAMin,
-                    _params.amtBMin
-                ),
-                _params.pid
-            )
-        );
+    positionId = bank.execute(
+      0, // (0 is reserved for opening new position)
+      _spell,
+      abi.encodeWithSelector(
+        addLiquiditySelector,
+        _params.tokenA,
+        _params.tokenB,
+        IPangolinSpellV2.Amounts(
+          _params.amtAUser,
+          _params.amtBUser,
+          _params.amtLPUser,
+          _params.amtABorrow,
+          _params.amtBBorrow,
+          _params.amtLPBorrow,
+          _params.amtAMin,
+          _params.amtBMin
+        ),
+        _params.pid
+      )
+    );
 
-        doRefundETH();
-        doRefund(_params.tokenA);
-        doRefund(_params.tokenB);
-        doRefund(lp);
-    }
+    doRefundETH();
+    doRefund(_params.tokenA);
+    doRefund(_params.tokenB);
+    doRefund(lp);
+  }
 
-    function increasePosition(
-        uint256 _positionId,
-        address _spell,
-        AddLiquidityParams memory _params
-    ) external {
-        address lp = factory.getPair(_params.tokenA, _params.tokenB);
-        address rewardToken = getRewardToken(_positionId);
+  function increasePosition(
+    uint _positionId,
+    address _spell,
+    AddLiquidityParams memory _params
+  ) external {
+    address lp = factory.getPair(_params.tokenA, _params.tokenB);
+    address rewardToken = getRewardToken(_positionId);
 
-        // approve tokens
-        ensureApprove(_params.tokenA, address(bank));
-        ensureApprove(_params.tokenB, address(bank));
-        ensureApprove(lp, address(bank));
+    // approve tokens
+    ensureApprove(_params.tokenA, address(bank));
+    ensureApprove(_params.tokenB, address(bank));
+    ensureApprove(lp, address(bank));
 
-        // transfer tokens from user
-        IERC20(_params.tokenA).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _params.amtAUser
-        );
-        IERC20(_params.tokenB).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _params.amtBUser
-        );
-        IERC20(lp).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _params.amtLPUser
-        );
-        bank.execute(
-            _positionId,
-            _spell,
-            abi.encodeWithSelector(
-                addLiquiditySelector,
-                _params.tokenA,
-                _params.tokenB,
-                IPangolinSpellV2.Amounts(
-                    _params.amtAUser,
-                    _params.amtBUser,
-                    _params.amtLPUser,
-                    _params.amtABorrow,
-                    _params.amtBBorrow,
-                    _params.amtLPBorrow,
-                    _params.amtAMin,
-                    _params.amtBMin
-                ),
-                _params.pid
-            )
-        );
+    // transfer tokens from user
+    IERC20(_params.tokenA).safeTransferFrom(msg.sender, address(this), _params.amtAUser);
+    IERC20(_params.tokenB).safeTransferFrom(msg.sender, address(this), _params.amtBUser);
+    IERC20(lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
+    bank.execute(
+      _positionId,
+      _spell,
+      abi.encodeWithSelector(
+        addLiquiditySelector,
+        _params.tokenA,
+        _params.tokenB,
+        IPangolinSpellV2.Amounts(
+          _params.amtAUser,
+          _params.amtBUser,
+          _params.amtLPUser,
+          _params.amtABorrow,
+          _params.amtBBorrow,
+          _params.amtLPBorrow,
+          _params.amtAMin,
+          _params.amtBMin
+        ),
+        _params.pid
+      )
+    );
 
-        doRefundETH();
-        doRefund(_params.tokenA);
-        doRefund(_params.tokenB);
-        doRefund(lp);
-        doRefund(rewardToken);
-    }
+    doRefundETH();
+    doRefund(_params.tokenA);
+    doRefund(_params.tokenB);
+    doRefund(lp);
+    doRefund(rewardToken);
+  }
 
-    function reducePosition(
-        address _spell,
-        uint256 _positionId,
-        RemoveLiquidityParams memory _params
-    ) external {
-        address lp = factory.getPair(_params.tokenA, _params.tokenB);
-        address rewardToken = getRewardToken(_positionId);
+  function reducePosition(
+    address _spell,
+    uint _positionId,
+    RemoveLiquidityParams memory _params
+  ) external {
+    address lp = factory.getPair(_params.tokenA, _params.tokenB);
+    address rewardToken = getRewardToken(_positionId);
 
-        bank.execute(
-            _positionId,
-            _spell,
-            abi.encodeWithSelector(
-                removeLiquiditySelector,
-                _params.tokenA,
-                _params.tokenB,
-                IPangolinSpellV2.RepayAmounts(
-                    _params.amtLPTake,
-                    _params.amtLPWithdraw,
-                    _params.amtARepay,
-                    _params.amtBRepay,
-                    _params.amtLPRepay,
-                    _params.amtAMin,
-                    _params.amtBMin
-                )
-            )
-        );
+    bank.execute(
+      _positionId,
+      _spell,
+      abi.encodeWithSelector(
+        removeLiquiditySelector,
+        _params.tokenA,
+        _params.tokenB,
+        IPangolinSpellV2.RepayAmounts(
+          _params.amtLPTake,
+          _params.amtLPWithdraw,
+          _params.amtARepay,
+          _params.amtBRepay,
+          _params.amtLPRepay,
+          _params.amtAMin,
+          _params.amtBMin
+        )
+      )
+    );
 
-        doRefundETH();
-        doRefund(_params.tokenA);
-        doRefund(_params.tokenB);
-        doRefund(lp);
-        doRefund(rewardToken);
-    }
+    doRefundETH();
+    doRefund(_params.tokenA);
+    doRefund(_params.tokenB);
+    doRefund(lp);
+    doRefund(rewardToken);
+  }
 
-    function harvestRewards(address _spell, uint256 _positionId) external {
-        bank.execute(
-            _positionId,
-            _spell,
-            abi.encodeWithSelector(harvestRewardsSelector)
-        );
+  function harvestRewards(address _spell, uint _positionId) external {
+    bank.execute(_positionId, _spell, abi.encodeWithSelector(harvestRewardsSelector));
 
-        // find reward token address from wrapper
-        address rewardToken = getRewardToken(_positionId);
+    // find reward token address from wrapper
+    address rewardToken = getRewardToken(_positionId);
 
-        doRefund(rewardToken);
-    }
+    doRefund(rewardToken);
+  }
 
-    function getPendingRewards(uint256 _positionId)
-        external
-        view
-        returns (uint256 pendingRewards)
-    {
-        // query position info from position id
-        (
-            ,
-            address collateralTokenAddress,
-            uint256 collateralId,
-            uint256 collateralAmount
-        ) = bank.getPositionInfo(_positionId);
+  function getPendingRewards(uint _positionId) external view returns (uint pendingRewards) {
+    // query position info from position id
+    (, address collateralTokenAddress, uint collateralId, uint collateralAmount) = bank
+      .getPositionInfo(_positionId);
 
-        IWMiniChefV2PNG wrapper = IWMiniChefV2PNG(collateralTokenAddress);
-        IMiniChefV2PNG chef = IMiniChefV2PNG(wrapper.chef());
+    IWMiniChefV2PNG wrapper = IWMiniChefV2PNG(collateralTokenAddress);
+    IMiniChefV2PNG chef = IMiniChefV2PNG(wrapper.chef());
 
-        // get info for calculating rewards
-        (uint256 pid, uint256 startRewardTokenPerShare) = wrapper.decodeId(
-            collateralId
-        );
-        (uint256 endRewardTokenPerShare, , ) = chef.poolInfo(pid);
-        (uint256 totalSupply, ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
+    // get info for calculating rewards
+    (uint pid, uint startRewardTokenPerShare) = wrapper.decodeId(collateralId);
+    (uint endRewardTokenPerShare, , ) = chef.poolInfo(pid);
+    (uint totalSupply, ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
 
-        // pending rewards separates into two parts
-        // 1. pending rewards that are in the wrapper contract
-        // 2. pending rewards that wrapper hasn't claimed from Chef's contract
-        uint256 pendingRewardFromChef = chef.pendingReward(
-            pid,
-            address(wrapper)
-        );
-        endRewardTokenPerShare +=
-            (pendingRewardFromChef * PRECISION) /
-            totalSupply;
+    // pending rewards separates into two parts
+    // 1. pending rewards that are in the wrapper contract
+    // 2. pending rewards that wrapper hasn't claimed from Chef's contract
+    uint pendingRewardFromChef = chef.pendingReward(pid, address(wrapper));
+    endRewardTokenPerShare += (pendingRewardFromChef * PRECISION) / totalSupply;
 
-        uint256 stReward = (startRewardTokenPerShare * collateralAmount)
-            .divCeil(PRECISION);
-        uint256 enReward = (endRewardTokenPerShare * collateralAmount) /
-            PRECISION;
+    uint stReward = (startRewardTokenPerShare * collateralAmount).divCeil(PRECISION);
+    uint enReward = (endRewardTokenPerShare * collateralAmount) / PRECISION;
 
-        pendingRewards = (enReward > stReward) ? enReward - stReward : 0;
-    }
+    pendingRewards = (enReward > stReward) ? enReward - stReward : 0;
+  }
 
-    function getRewardToken(uint256 _positionId)
-        internal
-        view
-        returns (address rewardToken)
-    {
-        // query position info from position id
-        (, address collateralTokenAddress, , ) = bank.getPositionInfo(
-            _positionId
-        );
+  function getRewardToken(uint _positionId) internal view returns (address rewardToken) {
+    // query position info from position id
+    (, address collateralTokenAddress, , ) = bank.getPositionInfo(_positionId);
 
-        IWMiniChefV2PNG wrapper = IWMiniChefV2PNG(collateralTokenAddress);
+    IWMiniChefV2PNG wrapper = IWMiniChefV2PNG(collateralTokenAddress);
 
-        // find reward token address from wrapper
-        rewardToken = address(wrapper.png());
-    }
+    // find reward token address from wrapper
+    rewardToken = address(wrapper.png());
+  }
 }
