@@ -1,0 +1,757 @@
+[
+  {
+    "key": "werc20-0x06799a1e4792001aa9114f0012b9650ca28059a3-1209299932290980665713177030673858520201944054295",
+    "exchange": {
+      "name": "Uniswap V2",
+      "logo": "/static/logos/exchange/uniswap.png",
+      "spellAddress": "0x00b1a4e7f217380a7c9e6c12f327ac4a1d9b6a14",
+      "reward": {
+        "tokenName": "UNI",
+        "rewardTokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+      }
+    },
+    "name": "UNI/ETH",
+    "tokens": [
+      "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xd3d2e2692501a5c9ca623199d38826e513033a17",
+    "type": "Liquidity Providing",
+    "color": "#f9eaf4",
+    "wTokenAddress": "0x06799a1e4792001aa9114f0012b9650ca28059a3",
+    "wTokenType": "WERC20"
+  },
+  {
+    "key": "wstaking-0x011535fd795fd28c749363e080662d62fbb456a7",
+    "exchange": {
+      "name": "Uniswap V2",
+      "logo": "/static/logos/exchange/uniswap.png",
+      "spellAddress": "0x00b1a4e7f217380a7c9e6c12f327ac4a1d9b6a14",
+      "reward": {
+        "tokenName": "UNI",
+        "rewardTokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+      }
+    },
+    "name": "DPI/ETH",
+    "tokens": [
+      "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0x4d5ef58aac27d99935e5b6b4a6778ff292059991",
+    "type": "Yield Farming",
+    "color": "#8150e6",
+    "wTokenAddress": "0x011535fd795fd28c749363e080662d62fbb456a7",
+    "rewardSymbol": "INDEX",
+    "rewardAddress": "0x0954906da0bf32d5479e25f46056d22f08464cab",
+    "wTokenType": "WStakingRewards"
+  },
+  {
+    "key": "werc20-0x06799a1e4792001aa9114f0012b9650ca28059a3-925224436442209452266071209771317932491848202612",
+    "exchange": {
+      "name": "Uniswap V2",
+      "logo": "/static/logos/exchange/uniswap.png",
+      "spellAddress": "0x00b1a4e7f217380a7c9e6c12f327ac4a1d9b6a14",
+      "reward": {
+        "tokenName": "UNI",
+        "rewardTokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+      }
+    },
+    "name": "LINK/ETH",
+    "tokens": [
+      "0x514910771af9ca656af840dff83e8264ecf986ca",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xa2107fa5b38d9bbd2c461d6edf11b11a50f6b974",
+    "type": "Liquidity Providing",
+    "color": "#335dd2",
+    "wTokenAddress": "0x06799a1e4792001aa9114f0012b9650ca28059a3",
+    "wTokenType": "WERC20"
+  },
+  {
+    "key": "werc20-0x06799a1e4792001aa9114f0012b9650ca28059a3-386385898413441759040235067259962248157083155783",
+    "exchange": {
+      "name": "Uniswap V2",
+      "logo": "/static/logos/exchange/uniswap.png",
+      "spellAddress": "0x00b1a4e7f217380a7c9e6c12f327ac4a1d9b6a14",
+      "reward": {
+        "tokenName": "UNI",
+        "rewardTokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+      }
+    },
+    "name": "SNX/ETH",
+    "tokens": [
+      "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0x43ae24960e5534731fc831386c07755a2dc33d47",
+    "type": "Liquidity Providing",
+    "color": "#00d1ff",
+    "wTokenAddress": "0x06799a1e4792001aa9114f0012b9650ca28059a3",
+    "wTokenType": "WERC20"
+  },
+  {
+    "key": "werc20-0x06799a1e4792001aa9114f0012b9650ca28059a3-1068551375830531589962623820047560488653820188992",
+    "exchange": {
+      "name": "Uniswap V2",
+      "logo": "/static/logos/exchange/uniswap.png",
+      "spellAddress": "0x00b1a4e7f217380a7c9e6c12f327ac4a1d9b6a14",
+      "reward": {
+        "tokenName": "UNI",
+        "rewardTokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+      }
+    },
+    "name": "WBTC/ETH",
+    "tokens": [
+      "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xbb2b8038a1640196fbe3e38816f3e67cba72d940",
+    "type": "Liquidity Providing",
+    "color": "#f49444",
+    "wTokenAddress": "0x06799a1e4792001aa9114f0012b9650ca28059a3",
+    "wTokenType": "WERC20"
+  },
+  {
+    "key": "werc20-0x06799a1e4792001aa9114f0012b9650ca28059a3-273221582802918082381815484178205651037310250536",
+    "exchange": {
+      "name": "Uniswap V2",
+      "logo": "/static/logos/exchange/uniswap.png",
+      "spellAddress": "0x00b1a4e7f217380a7c9e6c12f327ac4a1d9b6a14",
+      "reward": {
+        "tokenName": "UNI",
+        "rewardTokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+      }
+    },
+    "name": "YFI/ETH",
+    "tokens": [
+      "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0x2fdbadf3c4d5a8666bc06645b8358ab803996e28",
+    "type": "Liquidity Providing",
+    "color": "#0065D0",
+    "wTokenAddress": "0x06799a1e4792001aa9114f0012b9650ca28059a3",
+    "wTokenType": "WERC20"
+  },
+  {
+    "key": "werc20-0x06799a1e4792001aa9114f0012b9650ca28059a3-275498861170022089108532439384495730436935675743",
+    "exchange": {
+      "name": "Uniswap V2",
+      "logo": "/static/logos/exchange/uniswap.png",
+      "spellAddress": "0x00b1a4e7f217380a7c9e6c12f327ac4a1d9b6a14",
+      "reward": {
+        "tokenName": "UNI",
+        "rewardTokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+      }
+    },
+    "name": "USDC/USDT",
+    "tokens": [
+      "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "0xdac17f958d2ee523a2206206994597c13d831ec7"
+    ],
+    "lpTokenAddress": "0x3041cbd36888becc7bbcbc0045e3b1f144466f5f",
+    "type": "Liquidity Providing",
+    "color": "#2775CA",
+    "wTokenAddress": "0x06799a1e4792001aa9114f0012b9650ca28059a3",
+    "wTokenType": "WERC20"
+  },
+  {
+    "key": "werc20-0x06799a1e4792001aa9114f0012b9650ca28059a3-994927942081732774077955121581421418523584542933",
+    "exchange": {
+      "name": "Uniswap V2",
+      "logo": "/static/logos/exchange/uniswap.png",
+      "spellAddress": "0x00b1a4e7f217380a7c9e6c12f327ac4a1d9b6a14",
+      "reward": {
+        "tokenName": "UNI",
+        "rewardTokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+      }
+    },
+    "name": "DAI/USDC",
+    "tokens": [
+      "0x6b175474e89094c44da98b954eedeac495271d0f",
+      "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+    ],
+    "lpTokenAddress": "0xae461ca67b15dc8dc81ce7615e0320da1a9ab8d5",
+    "type": "Liquidity Providing",
+    "color": "#F5AC37",
+    "wTokenAddress": "0x06799a1e4792001aa9114f0012b9650ca28059a3",
+    "wTokenType": "WERC20"
+  },
+  {
+    "key": "werc20-0x06799a1e4792001aa9114f0012b9650ca28059a3-1277415707975801504997778032425509942405532353615",
+    "exchange": {
+      "name": "Uniswap V2",
+      "logo": "/static/logos/exchange/uniswap.png",
+      "spellAddress": "0x00b1a4e7f217380a7c9e6c12f327ac4a1d9b6a14",
+      "reward": {
+        "tokenName": "UNI",
+        "rewardTokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+      }
+    },
+    "name": "AAVE/ETH",
+    "tokens": [
+      "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xdfc14d2af169b0d36c4eff567ada9b2e0cae044f",
+    "type": "Liquidity Providing",
+    "color": "#7285b2",
+    "wTokenAddress": "0x06799a1e4792001aa9114f0012b9650ca28059a3",
+    "wTokenType": "WERC20"
+  },
+  {
+    "key": "werc20-0x06799a1e4792001aa9114f0012b9650ca28059a3-351843145539174241886429599883001225337978621902",
+    "exchange": {
+      "name": "Uniswap V2",
+      "logo": "/static/logos/exchange/uniswap.png",
+      "spellAddress": "0x00b1a4e7f217380a7c9e6c12f327ac4a1d9b6a14",
+      "reward": {
+        "tokenName": "UNI",
+        "rewardTokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+      }
+    },
+    "name": "ETH/CRV",
+    "tokens": [
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "0xd533a949740bb3306d119cc777fa900ba034cd52"
+    ],
+    "lpTokenAddress": "0x3da1313ae46132a397d90d95b1424a9a7e3e0fce",
+    "type": "Liquidity Providing",
+    "color": "#f0e00c",
+    "wTokenAddress": "0x06799a1e4792001aa9114f0012b9650ca28059a3",
+    "wTokenType": "WERC20"
+  },
+  {
+    "key": "werc20-0x06799a1e4792001aa9114f0012b9650ca28059a3-1032645502136839097869158895333537673945117411804",
+    "exchange": {
+      "name": "Uniswap V2",
+      "logo": "/static/logos/exchange/uniswap.png",
+      "spellAddress": "0x00b1a4e7f217380a7c9e6c12f327ac4a1d9b6a14",
+      "reward": {
+        "tokenName": "UNI",
+        "rewardTokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+      }
+    },
+    "name": "USDC/ETH",
+    "tokens": [
+      "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc",
+    "type": "Liquidity Providing",
+    "color": "#2474cc",
+    "wTokenAddress": "0x06799a1e4792001aa9114f0012b9650ca28059a3",
+    "wTokenType": "WERC20"
+  },
+  {
+    "key": "werc20-0x06799a1e4792001aa9114f0012b9650ca28059a3-1111421274577262176191654083625941381887762539045",
+    "exchange": {
+      "name": "Uniswap V2",
+      "logo": "/static/logos/exchange/uniswap.png",
+      "spellAddress": "0x00b1a4e7f217380a7c9e6c12f327ac4a1d9b6a14",
+      "reward": {
+        "tokenName": "UNI",
+        "rewardTokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+      }
+    },
+    "name": "MKR/ETH",
+    "tokens": [
+      "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xc2adda861f89bbb333c90c492cb837741916a225",
+    "type": "Liquidity Providing",
+    "color": "#58b5a6",
+    "wTokenAddress": "0x06799a1e4792001aa9114f0012b9650ca28059a3",
+    "wTokenType": "WERC20"
+  },
+  {
+    "key": "werc20-0x06799a1e4792001aa9114f0012b9650ca28059a3-75868688871649073572860417677736587997168474194",
+    "exchange": {
+      "name": "Uniswap V2",
+      "logo": "/static/logos/exchange/uniswap.png",
+      "spellAddress": "0x00b1a4e7f217380a7c9e6c12f327ac4a1d9b6a14",
+      "reward": {
+        "tokenName": "UNI",
+        "rewardTokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+      }
+    },
+    "name": "ETH/USDT",
+    "tokens": [
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "0xdac17f958d2ee523a2206206994597c13d831ec7"
+    ],
+    "lpTokenAddress": "0x0d4a11d5eeaac28ec3f61d100daf4d40471f1852",
+    "type": "Liquidity Providing",
+    "color": "#58b5a6",
+    "wTokenAddress": "0x06799a1e4792001aa9114f0012b9650ca28059a3",
+    "wTokenType": "WERC20"
+  },
+  {
+    "key": "werc20-0x06799a1e4792001aa9114f0012b9650ca28059a3-938967527125595836475317159035754667655090662161",
+    "exchange": {
+      "name": "Uniswap V2",
+      "logo": "/static/logos/exchange/uniswap.png",
+      "spellAddress": "0x00b1a4e7f217380a7c9e6c12f327ac4a1d9b6a14",
+      "reward": {
+        "tokenName": "UNI",
+        "rewardTokenAddress": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+      }
+    },
+    "name": "DAI/ETH",
+    "tokens": [
+      "0x6b175474e89094c44da98b954eedeac495271d0f",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xa478c2975ab1ea89e8196811f51a7b7ade33eb11",
+    "type": "Liquidity Providing",
+    "color": "#f5ac37",
+    "wTokenAddress": "0x06799a1e4792001aa9114f0012b9650ca28059a3",
+    "wTokenType": "WERC20"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-12",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "SUSHI/ETH",
+    "tokens": [
+      "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0x795065dcc9f64b5614c407a6efdc400da6221fb0",
+    "type": "Yield Farming",
+    "color": "#D760AB",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 12,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-42",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "DPI/ETH",
+    "tokens": [
+      "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0x34b13f8cd184f55d0bd4dd1fe6c07d46f245c7ed",
+    "type": "Yield Farming",
+    "color": "#8150e6",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 42,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-8",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "LINK/ETH",
+    "tokens": [
+      "0x514910771af9ca656af840dff83e8264ecf986ca",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xc40d16476380e4037e6b1a2594caf6a6cc8da967",
+    "type": "Yield Farming",
+    "color": "#335dd2",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 8,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-6",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "SNX/ETH",
+    "tokens": [
+      "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xa1d7b2d891e3a1f9ef4bbc5be20630c2feb1c470",
+    "type": "Yield Farming",
+    "color": "#00d1ff",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 6,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-3",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "sUSD/ETH",
+    "tokens": [
+      "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xf1f85b2c54a2bd284b1cf4141d64fd171bd85539",
+    "type": "Yield Farming",
+    "color": "#92919c",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 3,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-21",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "WBTC/ETH",
+    "tokens": [
+      "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xceff51756c56ceffca006cd410b03ffc46dd3a58",
+    "type": "Yield Farming",
+    "color": "#f49444",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 21,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-11",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "YFI/ETH",
+    "tokens": [
+      "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0x088ee5007c98a9677165d78dd2109ae4a3d04d0c",
+    "type": "Yield Farming",
+    "color": "#0065D0",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 11,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-37",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "AAVE/ETH",
+    "tokens": [
+      "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xd75ea151a61d06868e31f8988d28dfe5e9df57b4",
+    "type": "Yield Farming",
+    "color": "#7285b2",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 37,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-4",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "COMP/ETH",
+    "tokens": [
+      "0xc00e94cb662c3520282e6f5717214004a7f26888",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0x31503dcb60119a812fee820bb7042752019f2355",
+    "type": "Yield Farming",
+    "color": "#04d393",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 4,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-9",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "BAND/ETH",
+    "tokens": [
+      "0xba11d00c5f74255f56a5e366f4f77f5a186d7f55",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xa75f7c2f025f470355515482bde9efa8153536a8",
+    "type": "Yield Farming",
+    "color": "#516ffa",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 9,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-17",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "ETH/CRV",
+    "tokens": [
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "0xd533a949740bb3306d119cc777fa900ba034cd52"
+    ],
+    "lpTokenAddress": "0x58dc5a51fe44589beb22e8ce67720b5bc5378009",
+    "type": "Yield Farming",
+    "color": "#f0e00c",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 17,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-13",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "REN/ETH",
+    "tokens": [
+      "0x408e41876cccdc0f92210600ef50372656052a38",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0x611cde65dea90918c0078ac0400a72b0d25b9bb1",
+    "type": "Yield Farming",
+    "color": "#041d3d",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 13,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-1",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "USDC/ETH",
+    "tokens": [
+      "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0x397ff1542f962076d0bfe58ea045ffa2d347aca0",
+    "type": "Yield Farming",
+    "color": "#2474cc",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 1,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-33",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "MKR/ETH",
+    "tokens": [
+      "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xba13afecda9beb75de5c56bbaf696b880a5a50dd",
+    "type": "Yield Farming",
+    "color": "#58b5a6",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 33,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-0",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "ETH/USDT",
+    "tokens": [
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "0xdac17f958d2ee523a2206206994597c13d831ec7"
+    ],
+    "lpTokenAddress": "0x06da0fd433c1a5d7a4faa01111c044910a184553",
+    "type": "Yield Farming",
+    "color": "#58b5a6",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 0,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wchef-0xa2caea05ff7b98f10ad5ddc837f15905f33feb60-2",
+    "exchange": {
+      "name": "Sushiswap",
+      "logo": "/static/logos/exchange/sushiswap.png",
+      "spellAddress": "0xdc9c7a2bae15dd89271ae5701a6f4db147baa44c",
+      "stakingAddress": "0xc2edad668740f1aa35e4d8f227fb8e17dca888cd",
+      "reward": {
+        "tokenName": "SUSHI",
+        "rewardTokenAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2"
+      }
+    },
+    "name": "DAI/ETH",
+    "tokens": [
+      "0x6b175474e89094c44da98b954eedeac495271d0f",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "lpTokenAddress": "0xc3d03e4f041fd4cd388c549ee2a29a9e5075882f",
+    "type": "Yield Farming",
+    "color": "#f5ac37",
+    "wTokenAddress": "0xa2caea05ff7b98f10ad5ddc837f15905f33feb60",
+    "pid": 2,
+    "rewardSymbol": "SUSHI",
+    "rewardAddress": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+    "wTokenType": "WMasterChef"
+  },
+  {
+    "key": "wgauge-0xf1f32c8eeb06046d3cc3157b8f9f72b09d84ee5b-0-0",
+    "exchange": {
+      "name": "Curve",
+      "logo": "/static/tokens/crv.png",
+      "spellAddress": "0x8b947d8448cffb89ef07a6922b74fbabac219795",
+      "reward": {
+        "tokenName": "CRV",
+        "rewardTokenAddress": "0xd533a949740bb3306d119cc777fa900ba034cd52"
+      }
+    },
+    "name": "3pool",
+    "logo": "/static/tokens/3crv.png",
+    "tokens": [
+      "0x6b175474e89094c44da98b954eedeac495271d0f",
+      "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "0xdac17f958d2ee523a2206206994597c13d831ec7"
+    ],
+    "lpTokenAddress": "0x6c3f90f043a72fa612cbac8115ee7e52bde6e490",
+    "poolAddress": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
+    "type": "Yield Farming",
+    "color": "#FF5500",
+    "wTokenAddress": "0xf1f32c8eeb06046d3cc3157b8f9f72b09d84ee5b",
+    "pid": 0,
+    "gid": 0,
+    "isPoolAvailableV1": false,
+    "wTokenType": "WLiquidityGauge",
+    "stakingAddress": "0xbfcf63294ad7105dea65aa58f8ae5be2d9d0952a"
+  }
+]
