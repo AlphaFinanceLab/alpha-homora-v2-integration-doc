@@ -206,19 +206,38 @@ contract PangolinSpellV2Integration is BaseIntegration {
 
     // get info for calculating rewards
     (uint pid, uint startRewardTokenPerShare) = wrapper.decodeId(collateralId);
-    (uint endRewardTokenPerShare, , ) = chef.poolInfo(pid);
-    (uint totalSupply, ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
-
-    // pending rewards separates into two parts
-    // 1. pending rewards that are in the wrapper contract
-    // 2. pending rewards that wrapper hasn't claimed from Chef's contract
-    uint pendingRewardFromChef = chef.pendingReward(pid, address(wrapper));
-    endRewardTokenPerShare += (pendingRewardFromChef * PRECISION) / totalSupply;
+    uint endRewardTokenPerShare = calculateAccRewardPerShareMinichef(chef, pid);
 
     uint stReward = (startRewardTokenPerShare * collateralAmount).divCeil(PRECISION);
     uint enReward = (endRewardTokenPerShare * collateralAmount) / PRECISION;
 
     pendingRewards = (enReward > stReward) ? enReward - stReward : 0;
+  }
+
+  function calculateAccRewardPerShareMinichef(IMiniChefV2PNG _chef, uint _pid)
+    internal
+    view
+    returns (uint accRewardPerShare)
+  {
+    uint lastRewardTime;
+    uint allocPoint;
+    (accRewardPerShare, lastRewardTime, allocPoint) = _chef.poolInfo(_pid);
+    IERC20 lpToken = IERC20(_chef.lpToken(_pid));
+    uint lpSupply = lpToken.balanceOf(address(this));
+    uint rewardsExpiration = _chef.rewardsExpiration();
+    uint currentTimestamp = block.timestamp;
+    uint totalAllocPoint = _chef.totalAllocPoint();
+    uint rewardPerSecond = _chef.rewardPerSecond();
+
+    if (currentTimestamp > lastRewardTime && lpSupply != 0) {
+      uint time = currentTimestamp <= rewardsExpiration
+        ? currentTimestamp - lastRewardTime // Accrue rewards until now
+        : rewardsExpiration > lastRewardTime
+        ? rewardsExpiration - lastRewardTime // Accrue rewards until expiration
+        : 0; // No rewards to accrue
+      uint reward = (time * rewardPerSecond * allocPoint) / totalAllocPoint;
+      accRewardPerShare += (reward * PRECISION) / lpSupply;
+    }
   }
 
   function getRewardToken(uint _positionId) internal view returns (address rewardToken) {

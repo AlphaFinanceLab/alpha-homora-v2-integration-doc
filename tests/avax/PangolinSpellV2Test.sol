@@ -65,7 +65,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
     testReducePosition(positionId);
   }
 
-  function testOpenPosition() public returns (uint positionId) {
+  function testOpenPosition() internal returns (uint positionId) {
     uint amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
     uint amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
     uint amtLPUser = 100;
@@ -113,7 +113,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
     require(userBalanceLP_before > userBalanceLP_after, 'incorrect user balance of lp');
   }
 
-  function testIncreasePosition(uint _positionId) public {
+  function testIncreasePosition(uint _positionId) internal {
     // increase block timestamp to calculate more rewards
     vm.warp(block.timestamp + 1000);
 
@@ -176,7 +176,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
     );
   }
 
-  function testReducePosition(uint _positionId) public {
+  function testReducePosition(uint _positionId) internal {
     // increase block timestamp to calculate more rewards
     vm.warp(block.timestamp + 1000);
 
@@ -239,7 +239,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
     );
   }
 
-  function testHarvestRewards(uint _positionId) public {
+  function testHarvestRewards(uint _positionId) internal {
     // increase block timestamp to calculate more rewards
     vm.warp(block.timestamp + 1000);
 
@@ -268,7 +268,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
     );
   }
 
-  function testGetPendingRewards(uint _positionId) public {
+  function testGetPendingRewards(uint _positionId) internal {
     // increase block timestamp to calculate more rewards
     vm.warp(block.timestamp + 1000);
 
