@@ -283,7 +283,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     require(userBalanceToken1_after - userBalanceToken1_before == fee1);
   }
 
-  function testOpenPositionWithOptimalSwap() public {
+  function testOpenPositionWithOptimalSwap() internal {
     uint multiplier0 = 100;
     uint multiplier1 = 100;
     (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
