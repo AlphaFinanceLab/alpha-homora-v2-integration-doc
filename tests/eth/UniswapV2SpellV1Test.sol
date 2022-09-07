@@ -62,7 +62,7 @@ contract UniswapV2SpellV1Test is UtilsETH {
     testReducePosition(positionId);
   }
 
-  function testOpenPosition() public returns (uint positionId) {
+  function testOpenPosition() internal returns (uint positionId) {
     uint amtAUser = 100 * 10**IERC20Metadata(tokenA).decimals();
     uint amtBUser = (1 * 10**IERC20Metadata(tokenB).decimals());
     uint amtLPUser = 100;
@@ -110,7 +110,7 @@ contract UniswapV2SpellV1Test is UtilsETH {
     require(userBalanceLP_before > userBalanceLP_after, 'incorrect user balance of lp');
   }
 
-  function testIncreasePosition(uint _positionId) public {
+  function testIncreasePosition(uint _positionId) internal {
     // increase block timestamp to calculate more rewards
     vm.warp(block.timestamp + 10000);
 
@@ -174,7 +174,7 @@ contract UniswapV2SpellV1Test is UtilsETH {
     );
   }
 
-  function testReducePosition(uint _positionId) public {
+  function testReducePosition(uint _positionId) internal {
     // increase block timestamp to calculate more rewards
     vm.warp(block.timestamp + 10000);
 
@@ -239,7 +239,7 @@ contract UniswapV2SpellV1Test is UtilsETH {
     );
   }
 
-  function testHarvestRewards(uint _positionId) public {
+  function testHarvestRewards(uint _positionId) internal {
     // increase block timestamp to calculate more rewards
     vm.warp(block.timestamp + 10000);
 
@@ -269,7 +269,7 @@ contract UniswapV2SpellV1Test is UtilsETH {
     );
   }
 
-  function testGetPendingRewards(uint _positionId) public {
+  function testGetPendingRewards(uint _positionId) internal {
     // increase block timestamp to calculate more rewards
     vm.warp(block.timestamp + 10000);
 

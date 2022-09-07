@@ -99,7 +99,7 @@ contract CurveSpellV1Test is UtilsETH {
     require(userBalanceLP_before > userBalanceLP_after, 'incorrect user balance of lp');
   }
 
-  function testIncreasePosition(uint _positionId) public {
+  function testIncreasePosition(uint _positionId) internal {
     // increase block number to calculate more rewards
     vm.warp(block.timestamp + 10000);
 
@@ -161,7 +161,7 @@ contract CurveSpellV1Test is UtilsETH {
     );
   }
 
-  function testReducePosition(uint _positionId) public {
+  function testReducePosition(uint _positionId) internal {
     // increase block number to calculate more rewards
     vm.warp(block.timestamp + 10000);
 
@@ -251,7 +251,7 @@ contract CurveSpellV1Test is UtilsETH {
     );
   }
 
-  function testGetPendingRewards(uint _positionId) public {
+  function testGetPendingRewards(uint _positionId) internal {
     // increase block number to calculate more rewards
     vm.warp(block.timestamp + 10000);
 
