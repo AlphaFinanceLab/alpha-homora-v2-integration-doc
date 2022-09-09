@@ -32,7 +32,7 @@ contract BeetsSpellV1Integration is BaseIntegration {
   // harvestWMasterChef()
   bytes4 harvestRewardsSelector = 0x40a65ad2;
 
-  uint constant PRECISION = 10**12;
+  uint constant PRECISION = 10**18;
 
   struct AddLiquidityParams {
     bytes32 poolId; // poolId in Vault
