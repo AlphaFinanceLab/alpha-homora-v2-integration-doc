@@ -232,7 +232,7 @@ This query is for borrowing information. It returns the following information (i
 
 As mentioned earlier, parameter inputs for `bank.execute()` depends on DEXes on each chain and type of the interaction. Please check the following links to see how to call the function properly.
 
-[Interact with HomoraV2 on Eth](./docs/homoraETH.md)
-[Interact with HomoraV2 on Avax](./docs/homoraAVAX.md)
-[Interact with HomoraV2 on Fantom](./docs/homoraFTM.md)
-[Interact with HomoraV2 on Optimism](./docs/homoraOP.md)
+- [Interact with HomoraV2 on Eth](./docs/homoraETH.md)
+- [Interact with HomoraV2 on Avax](./docs/homoraAVAX.md)
+- [Interact with HomoraV2 on Fantom](./docs/homoraFTM.md)
+- [Interact with HomoraV2 on Optimism](./docs/homoraOP.md)
