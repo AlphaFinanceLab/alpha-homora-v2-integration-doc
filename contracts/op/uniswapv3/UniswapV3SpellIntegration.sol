@@ -8,12 +8,12 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensio
 
 import '../../BaseIntegration.sol';
 import '../../utils/HomoraMath.sol';
-import '../../../../interfaces/op/IBankOP.sol';
-import '../../../../interfaces/op/uniswapv3/IUniswapV3Factory.sol';
-import '../../../../interfaces/op/uniswapv3/IWUniswapV3Position.sol';
-import '../../../../interfaces/op/uniswapv3/IUniswapV3Pool.sol';
-import '../../../../interfaces/op/uniswapv3/IUniswapV3PositionManager.sol';
-import '../../../../interfaces/op/uniswapv3/IUniswapV3Spell.sol';
+import '../../../interfaces/op/IBankOP.sol';
+import '../../../interfaces/op/uniswapv3/IUniswapV3Factory.sol';
+import '../../../interfaces/op/uniswapv3/IWUniswapV3Position.sol';
+import '../../../interfaces/op/uniswapv3/IUniswapV3Pool.sol';
+import '../../../interfaces/op/uniswapv3/IUniswapV3PositionManager.sol';
+import '../../../interfaces/op/uniswapv3/IUniswapV3Spell.sol';
 import 'forge-std/console2.sol';
 
 contract UniswapV3SpellIntegration is BaseIntegration {
@@ -23,24 +23,6 @@ contract UniswapV3SpellIntegration is BaseIntegration {
   IBankOP bank; // homora bank
   IUniswapV3Factory factory; // uniswap v3 factory
   IUniswapV3PositionManager npm; // uniswap v3 position manager
-
-  // openPosition((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,bool,uint256))
-  bytes4 openPositionSelector = 0xbd0ce28c;
-
-  // addLiquidity((uint,uint256,uint256,uint256,uint256,uint256,uint256,uint256,bool,uint256))
-  bytes4 addLiquiditySelector = 0x46f9ad4d;
-
-  // removeLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))
-  bytes4 removeLiquiditySelector = 0x49d9a738;
-
-  // harvest(bool)
-  bytes4 harvestFeeSelector = 0x70a1903d;
-
-  // closePosition((uint256,uint256,uint256,bool))
-  bytes4 closePositionSelector = 0x713866c9;
-
-  // reinvest((uint256,uint256,bool,uint256,uint256,uint256))
-  bytes4 reinvestSelector = 0x5d12ab7e;
 
   constructor(
     IBankOP _bank,
@@ -52,7 +34,7 @@ contract UniswapV3SpellIntegration is BaseIntegration {
     npm = _npm;
   }
 
-  function openPosition(address _spell, IUniswapV3Spell.OpenPositionParams memory _params)
+  function openPosition(IUniswapV3Spell _spell, IUniswapV3Spell.OpenPositionParams memory _params)
     external
     returns (uint positionId)
   {
@@ -64,11 +46,9 @@ contract UniswapV3SpellIntegration is BaseIntegration {
     IERC20(_params.token0).safeTransferFrom(msg.sender, address(this), _params.amt0User);
     IERC20(_params.token1).safeTransferFrom(msg.sender, address(this), _params.amt1User);
 
-    positionId = bank.execute(
-      0, // (0 is reserved for opening new position)
-      _spell,
-      abi.encodeWithSelector(openPositionSelector, _params)
-    );
+    bytes memory executeData = abi.encodeWithSelector(_spell.openPosition.selector, _params);
+    // (0 is reserved for opening new position)
+    positionId = bank.execute(0, address(_spell), executeData);
 
     doRefundETH();
     doRefund(_params.token0);
@@ -77,7 +57,7 @@ contract UniswapV3SpellIntegration is BaseIntegration {
 
   function increasePosition(
     uint _positionId,
-    address _spell,
+    IUniswapV3Spell _spell,
     IUniswapV3Spell.AddLiquidityParams memory _params
   ) external {
     (, address collateralTokenAddress, uint collateralTokenId, ) = bank.getPositionInfo(
@@ -96,7 +76,9 @@ contract UniswapV3SpellIntegration is BaseIntegration {
     // transfer tokens from user
     IERC20(posInfo.token0).safeTransferFrom(msg.sender, address(this), _params.amt0User);
     IERC20(posInfo.token1).safeTransferFrom(msg.sender, address(this), _params.amt1User);
-    bank.execute(_positionId, _spell, abi.encodeWithSelector(addLiquiditySelector, _params));
+
+    bytes memory executeData = abi.encodeWithSelector(_spell.addLiquidity.selector, _params);
+    bank.execute(_positionId, address(_spell), executeData);
 
     doRefundETH();
     doRefund(posInfo.token0);
@@ -104,8 +86,8 @@ contract UniswapV3SpellIntegration is BaseIntegration {
   }
 
   function reducePosition(
-    address _spell,
     uint _positionId,
+    IUniswapV3Spell _spell,
     IUniswapV3Spell.RemoveLiquidityParams memory _params
   ) external {
     (, address collateralTokenAddress, uint collateralTokenId, ) = bank.getPositionInfo(
@@ -117,7 +99,8 @@ contract UniswapV3SpellIntegration is BaseIntegration {
       collateralTokenId
     );
 
-    bank.execute(_positionId, _spell, abi.encodeWithSelector(removeLiquiditySelector, _params));
+    bytes memory executeData = abi.encodeWithSelector(_spell.removeLiquidity.selector, _params);
+    bank.execute(_positionId, address(_spell), executeData);
 
     doRefundETH();
     doRefund(posInfo.token0);
@@ -125,11 +108,12 @@ contract UniswapV3SpellIntegration is BaseIntegration {
   }
 
   function harvestFee(
-    address _spell,
     uint _positionId,
+    IUniswapV3Spell _spell,
     bool _convertWETH
   ) external {
-    bank.execute(_positionId, _spell, abi.encodeWithSelector(harvestFeeSelector, _convertWETH));
+    bytes memory executeData = abi.encodeWithSelector(_spell.harvest.selector, _convertWETH);
+    bank.execute(_positionId, address(_spell), executeData);
 
     // query position info from position id
     (, address collateralTokenAddress, uint collateralTokenId, ) = bank.getPositionInfo(
@@ -147,8 +131,8 @@ contract UniswapV3SpellIntegration is BaseIntegration {
   }
 
   function closePosition(
-    address _spell,
     uint _positionId,
+    IUniswapV3Spell _spell,
     IUniswapV3Spell.ClosePositionParams memory _params
   ) external {
     (, address collateralTokenAddress, uint collateralId, ) = bank.getPositionInfo(_positionId);
@@ -158,15 +142,16 @@ contract UniswapV3SpellIntegration is BaseIntegration {
       collateralId
     );
 
-    bank.execute(_positionId, _spell, abi.encodeWithSelector(closePositionSelector, _params));
+    bytes memory executeData = abi.encodeWithSelector(_spell.closePosition.selector, _params);
+    bank.execute(_positionId, address(_spell), executeData);
     doRefundETH();
     doRefund(posInfo.token0);
     doRefund(posInfo.token1);
   }
 
   function reinvest(
-    address _spell,
     uint _positionId,
+    IUniswapV3Spell _spell,
     IUniswapV3Spell.ReinvestParams memory _params
   ) external {
     (, address collateralTokenAddress, uint collateralId, ) = bank.getPositionInfo(_positionId);
@@ -176,67 +161,15 @@ contract UniswapV3SpellIntegration is BaseIntegration {
       collateralId
     );
 
-    bank.execute(_positionId, _spell, abi.encodeWithSelector(reinvestSelector, _params));
+    bytes memory executeData = abi.encodeWithSelector(_spell.reinvest.selector, _params);
+    bank.execute(_positionId, address(_spell), executeData);
 
     doRefundETH();
     doRefund(posInfo.token0);
     doRefund(posInfo.token1);
   }
 
-  // ref: from arrakis finance: https://github.com/ArrakisFinance/vault-v1-core/blob/main/contracts/ArrakisVaultV1.sol
-  function _computeFeesEarned(
-    IUniswapV3Pool _pool,
-    bool _isZero,
-    uint _feeGrowthInsideLast,
-    int24 _tick,
-    int24 _lowerTick,
-    int24 _upperTick,
-    uint128 _liquidity
-  ) private view returns (uint fee) {
-    uint feeGrowthOutsideLower;
-    uint feeGrowthOutsideUpper;
-    uint feeGrowthGlobal;
-    if (_isZero) {
-      feeGrowthGlobal = _pool.feeGrowthGlobal0X128();
-      (, , feeGrowthOutsideLower, , , , , ) = _pool.ticks(_lowerTick);
-      (, , feeGrowthOutsideUpper, , , , , ) = _pool.ticks(_upperTick);
-    } else {
-      feeGrowthGlobal = _pool.feeGrowthGlobal1X128();
-      (, , , feeGrowthOutsideLower, , , , ) = _pool.ticks(_lowerTick);
-      (, , , feeGrowthOutsideUpper, , , , ) = _pool.ticks(_upperTick);
-    }
-
-    unchecked {
-      // calculate fee growth below
-      uint feeGrowthBelow;
-      if (_tick >= _lowerTick) {
-        feeGrowthBelow = feeGrowthOutsideLower;
-      } else {
-        feeGrowthBelow = feeGrowthGlobal - feeGrowthOutsideLower;
-      }
-
-      // calculate fee growth above
-      uint feeGrowthAbove;
-      if (_tick < _upperTick) {
-        feeGrowthAbove = feeGrowthOutsideUpper;
-      } else {
-        feeGrowthAbove = feeGrowthGlobal - feeGrowthOutsideUpper;
-      }
-
-      uint feeGrowthInside = feeGrowthGlobal - feeGrowthBelow - feeGrowthAbove;
-      fee = (_liquidity * (feeGrowthInside - _feeGrowthInsideLast)) / 2**128;
-    }
-  }
-
-  function _getPositionID(
-    address _owner,
-    int24 _lowerTick,
-    int24 _upperTick
-  ) internal view returns (bytes32 positionId) {
-    return keccak256(abi.encodePacked(_owner, _lowerTick, _upperTick));
-  }
-
-  function getPendingFees(uint _positionId) external returns (uint feeAmt0, uint feeAmt1) {
+  function getPendingFees(uint _positionId) external view returns (uint feeAmt0, uint feeAmt1) {
     uint collateralTokenId;
     uint collateralAmount;
     address collateralTokenAddress;
@@ -289,5 +222,58 @@ contract UniswapV3SpellIntegration is BaseIntegration {
         liquidity
       ) +
       tokensOwed1;
+  }
+
+  function _getPositionID(
+    address _owner,
+    int24 _lowerTick,
+    int24 _upperTick
+  ) internal pure returns (bytes32 positionId) {
+    return keccak256(abi.encodePacked(_owner, _lowerTick, _upperTick));
+  }
+
+  // ref: from arrakis finance: https://github.com/ArrakisFinance/vault-v1-core/blob/main/contracts/ArrakisVaultV1.sol
+  function _computeFeesEarned(
+    IUniswapV3Pool _pool,
+    bool _isZero,
+    uint _feeGrowthInsideLast,
+    int24 _tick,
+    int24 _lowerTick,
+    int24 _upperTick,
+    uint128 _liquidity
+  ) internal view returns (uint fee) {
+    uint feeGrowthOutsideLower;
+    uint feeGrowthOutsideUpper;
+    uint feeGrowthGlobal;
+    if (_isZero) {
+      feeGrowthGlobal = _pool.feeGrowthGlobal0X128();
+      (, , feeGrowthOutsideLower, , , , , ) = _pool.ticks(_lowerTick);
+      (, , feeGrowthOutsideUpper, , , , , ) = _pool.ticks(_upperTick);
+    } else {
+      feeGrowthGlobal = _pool.feeGrowthGlobal1X128();
+      (, , , feeGrowthOutsideLower, , , , ) = _pool.ticks(_lowerTick);
+      (, , , feeGrowthOutsideUpper, , , , ) = _pool.ticks(_upperTick);
+    }
+
+    unchecked {
+      // calculate fee growth below
+      uint feeGrowthBelow;
+      if (_tick >= _lowerTick) {
+        feeGrowthBelow = feeGrowthOutsideLower;
+      } else {
+        feeGrowthBelow = feeGrowthGlobal - feeGrowthOutsideLower;
+      }
+
+      // calculate fee growth above
+      uint feeGrowthAbove;
+      if (_tick < _upperTick) {
+        feeGrowthAbove = feeGrowthOutsideUpper;
+      } else {
+        feeGrowthAbove = feeGrowthGlobal - feeGrowthOutsideUpper;
+      }
+
+      uint feeGrowthInside = feeGrowthGlobal - feeGrowthBelow - feeGrowthAbove;
+      fee = (_liquidity * (feeGrowthInside - _feeGrowthInsideLast)) / 2**128;
+    }
   }
 }
