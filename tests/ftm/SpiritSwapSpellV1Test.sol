@@ -8,11 +8,11 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensio
 
 import './UtilsFTM.sol';
 import '../../contracts/ftm/spiritswap/SpiritSwapSpellV1Integration.sol';
-import '../../../../interfaces/ftm/IBankFTM.sol';
-import '../../../../interfaces/ftm/spiritswap/ISpiritSwapFactory.sol';
-import '../../../../interfaces/ftm/spiritswap/ISpiritSwapSpellV1.sol';
-import '../../../../interfaces/ftm/spiritswap/IMasterChefSpirit.sol';
-import '../../../../interfaces/ftm/spiritswap/IWMasterChefSpirit.sol';
+import '../../interfaces/ftm/IBankFTM.sol';
+import '../../interfaces/ftm/spiritswap/ISpiritSwapFactory.sol';
+import '../../interfaces/ftm/spiritswap/ISpiritSwapSpellV1.sol';
+import '../../interfaces/ftm/spiritswap/IMasterChefSpirit.sol';
+import '../../interfaces/ftm/spiritswap/IWMasterChefSpirit.sol';
 
 import 'forge-std/console2.sol';
 
@@ -25,12 +25,10 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
   ISpiritSwapSpellV1 spell = ISpiritSwapSpellV1(0x928f13D14FBDD933d812FCF777D9e18397D425de); // spell to interact with
   ISpiritSwapFactory factory = ISpiritSwapFactory(0xEF45d134b73241eDa7703fa787148D9C9F4950b0); // trader joe factory
 
-  // TODO: change tokenA you want
+  // TODO: change tokenA, tokenB, poolId you want
   address tokenA = WFTM; // The first token of pool
-  // TODO: change tokenB you want
   address tokenB = USDC; // The second token of pool
-  // TODO: change pool id you want
-  uint pid = 4; // Pool id of MasterchefBoo
+  uint poolId = 4; // Pool id of MasterchefBoo
 
   SpiritSwapSpellV1Integration integration;
   address lp;
@@ -65,15 +63,21 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
   }
 
   function testOpenPosition() internal returns (uint positionId) {
-    uint amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
-    uint amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
-    uint amtLPUser = 100;
-    uint amtABorrow = amtAUser;
-    uint amtBBorrow = amtBUser;
-    uint amtLPBorrow = 0;
-    uint amtAMin = 0;
-    uint amtBMin = 0;
-
+    // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
+    SpiritSwapSpellV1Integration.AddLiquidityParams memory params = SpiritSwapSpellV1Integration
+      .AddLiquidityParams(
+        tokenA,
+        tokenB,
+        10**IERC20Metadata(tokenA).decimals(),
+        10**IERC20Metadata(tokenB).decimals(),
+        100,
+        10**IERC20Metadata(tokenA).decimals(),
+        10**IERC20Metadata(tokenB).decimals(),
+        0,
+        0,
+        0,
+        poolId
+      );
     // user info before
     uint userBalanceTokenA_before = balanceOf(tokenA, alice);
     uint userBalanceTokenB_before = balanceOf(tokenB, alice);
@@ -84,22 +88,7 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
 
     // call contract
     vm.startPrank(alice);
-    positionId = integration.openPosition(
-      address(spell),
-      SpiritSwapSpellV1Integration.AddLiquidityParams(
-        tokenA,
-        tokenB,
-        amtAUser,
-        amtBUser,
-        amtLPUser,
-        amtABorrow,
-        amtBBorrow,
-        amtLPBorrow,
-        amtAMin,
-        amtBMin,
-        pid
-      )
-    );
+    positionId = integration.openPosition(spell, params);
     vm.stopPrank();
 
     // user info after
@@ -121,14 +110,21 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
     // find reward token address
     address rewardToken = address(wrapper.rewardToken());
 
-    uint amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
-    uint amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
-    uint amtLPUser = 100;
-    uint amtABorrow = amtAUser;
-    uint amtBBorrow = amtBUser;
-    uint amtLPBorrow = 0;
-    uint amtAMin = 0;
-    uint amtBMin = 0;
+    // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
+    SpiritSwapSpellV1Integration.AddLiquidityParams memory params = SpiritSwapSpellV1Integration
+      .AddLiquidityParams(
+        tokenA,
+        tokenB,
+        10**IERC20Metadata(tokenA).decimals(),
+        10**IERC20Metadata(tokenB).decimals(),
+        100,
+        10**IERC20Metadata(tokenA).decimals(),
+        10**IERC20Metadata(tokenB).decimals(),
+        0,
+        0,
+        0,
+        poolId
+      );
 
     // user info before
     uint userBalanceTokenA_before = balanceOf(tokenA, alice);
@@ -138,23 +134,7 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
 
     // call contract
     vm.startPrank(alice);
-    integration.increasePosition(
-      _positionId,
-      address(spell),
-      SpiritSwapSpellV1Integration.AddLiquidityParams(
-        tokenA,
-        tokenB,
-        amtAUser,
-        amtBUser,
-        amtLPUser,
-        amtABorrow,
-        amtBBorrow,
-        amtLPBorrow,
-        amtAMin,
-        amtBMin,
-        pid
-      )
-    );
+    integration.increasePosition(_positionId, spell, params);
     vm.stopPrank();
 
     // user info after
@@ -182,13 +162,19 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
     // find reward token address
     address rewardToken = address(wrapper.rewardToken());
 
-    uint amtLPTake = collateralAmount; // withdraw 100% of position
-    uint amtLPWithdraw = 100; // return only 100 LP to user
-    uint amtARepay = type(uint).max; // repay 100% of tokenA
-    uint amtBRepay = type(uint).max; // repay 100% of tokenB
-    uint amtLPRepay = 0; // (always 0 since LP borrow is disallowed)
-    uint amtAMin = 0; // amount of tokenA that user expects after withdrawal
-    uint amtBMin = 0; // amount of tokenB that user expects after withdrawal
+    // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
+    SpiritSwapSpellV1Integration.RemoveLiquidityParams memory params = SpiritSwapSpellV1Integration
+      .RemoveLiquidityParams(
+        tokenA,
+        tokenB,
+        collateralAmount,
+        100,
+        type(uint).max,
+        type(uint).max,
+        0,
+        0,
+        0
+      );
 
     // user info before
     uint userBalanceTokenA_before = balanceOf(tokenA, alice);
@@ -198,21 +184,7 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
 
     // call contract
     vm.startPrank(alice);
-    integration.reducePosition(
-      address(spell),
-      _positionId,
-      SpiritSwapSpellV1Integration.RemoveLiquidityParams(
-        tokenA,
-        tokenB,
-        amtLPTake,
-        amtLPWithdraw,
-        amtARepay,
-        amtBRepay,
-        amtLPRepay,
-        amtAMin,
-        amtBMin
-      )
-    );
+    integration.reducePosition(_positionId, spell, params);
     vm.stopPrank();
 
     // user info after
@@ -224,7 +196,7 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
     require(userBalanceTokenA_after > userBalanceTokenA_before, 'incorrect user balance of tokenA');
     require(userBalanceTokenB_after > userBalanceTokenB_before, 'incorrect user balance of tokenB');
     require(
-      userBalanceLP_after - userBalanceLP_before == amtLPWithdraw,
+      userBalanceLP_after - userBalanceLP_before == params.amtLPWithdraw,
       'incorrect user balance of LP'
     );
     // NOTE: no rewards returned since SpiritSwapV1 pools have been migrated to new version already
@@ -251,7 +223,7 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
 
     // call contract
     vm.startPrank(alice);
-    integration.harvestRewards(address(spell), _positionId);
+    integration.harvestRewards(_positionId, spell);
     vm.stopPrank();
 
     // user info after

@@ -23,15 +23,6 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
   IBankFTM bank; // homora bank
   ISpookySwapFactory factory; // spookyswap factory
 
-  // addLiquidityWMasterChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint256)
-  bytes4 addLiquiditySelector = 0xe07d904e;
-
-  // removeLiquidityWMasterChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256))
-  bytes4 removeLiquiditySelector = 0x95723b1c;
-
-  // harvestWMasterChef()
-  bytes4 harvestRewardsSelector = 0x40a65ad2;
-
   uint constant PRECISION = 10**12;
 
   struct AddLiquidityParams {
@@ -42,22 +33,22 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
     uint amtLPUser; // Supplied LP token amount
     uint amtABorrow; // Borrow tokenA amount
     uint amtBBorrow; // Borrow tokenB amount
-    uint amtLPBorrow; // Borrow LP token amount
+    uint amtLPBorrow; // Borrow LP token amount (should be 0, not support borrowing LP tokens)
     uint amtAMin; // Desired tokenA amount (slippage control)
     uint amtBMin; // Desired tokenB amount (slippage control)
-    uint pid; // pool id of BoostedMasterChefReward
+    uint poolId; // pool id of BoostedMasterChefReward
   }
 
   struct RemoveLiquidityParams {
     address tokenA; // The first token of pool
     address tokenB; // The second token of pool
     uint amtLPTake; // Amount of LP being removed from the position
-    uint amtLPWithdraw; // Amount of LP being received from removing the position (remaining will be converted to tokenA, tokenB)
-    uint amtARepay; // Repay tokenA amount (repay all -> type(uint).max)
-    uint amtBRepay; // Repay tokenB amount (repay all -> type(uint).max)
-    uint amtLPRepay; // Repay LP token amount
-    uint amtAMin; // Desired tokenA amount
-    uint amtBMin; // Desired tokenB amount
+    uint amtLPWithdraw; // Amount of LP that user receives (remainings are converted to underlying tokens).
+    uint amtARepay; // Amount of tokenA that user repays (repay all -> type(uint).max)
+    uint amtBRepay; // Amount of tokenB that user repays (repay all -> type(uint).max)
+    uint amtLPRepay; // Amount of LP that user repays (should be 0, not support borrowing LP tokens).
+    uint amtAMin; // Desired tokenA amount (slippage control)
+    uint amtBMin; // Desired tokenB amount (slippage control)
   }
 
   constructor(IBankFTM _bank, ISpookySwapFactory _factory) {
@@ -65,7 +56,7 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
     factory = _factory;
   }
 
-  function openPosition(address _spell, AddLiquidityParams memory _params)
+  function openPosition(ISpookySwapSpellV2 _spell, AddLiquidityParams memory _params)
     external
     returns (uint positionId)
   {
@@ -81,26 +72,25 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
     IERC20(_params.tokenB).safeTransferFrom(msg.sender, address(this), _params.amtBUser);
     IERC20(lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
 
-    positionId = bank.execute(
-      0, // (0 is reserved for opening new position)
-      _spell,
-      abi.encodeWithSelector(
-        addLiquiditySelector,
-        _params.tokenA,
-        _params.tokenB,
-        ISpookySwapSpellV2.Amounts(
-          _params.amtAUser,
-          _params.amtBUser,
-          _params.amtLPUser,
-          _params.amtABorrow,
-          _params.amtBBorrow,
-          _params.amtLPBorrow,
-          _params.amtAMin,
-          _params.amtBMin
-        ),
-        _params.pid
-      )
+    bytes memory executeData = abi.encodeWithSelector(
+      _spell.addLiquidityWMasterChef.selector,
+      _params.tokenA,
+      _params.tokenB,
+      ISpookySwapSpellV2.Amounts(
+        _params.amtAUser,
+        _params.amtBUser,
+        _params.amtLPUser,
+        _params.amtABorrow,
+        _params.amtBBorrow,
+        _params.amtLPBorrow,
+        _params.amtAMin,
+        _params.amtBMin
+      ),
+      _params.poolId
     );
+
+    // (0 is reserved for opening new position)
+    positionId = bank.execute(0, address(_spell), executeData);
 
     doRefundETH();
     doRefund(_params.tokenA);
@@ -110,7 +100,7 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
 
   function increasePosition(
     uint _positionId,
-    address _spell,
+    ISpookySwapSpellV2 _spell,
     AddLiquidityParams memory _params
   ) external {
     address lp = factory.getPair(_params.tokenA, _params.tokenB);
@@ -126,26 +116,24 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
     IERC20(_params.tokenB).safeTransferFrom(msg.sender, address(this), _params.amtBUser);
     IERC20(lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
 
-    bank.execute(
-      _positionId,
-      _spell,
-      abi.encodeWithSelector(
-        addLiquiditySelector,
-        _params.tokenA,
-        _params.tokenB,
-        ISpookySwapSpellV2.Amounts(
-          _params.amtAUser,
-          _params.amtBUser,
-          _params.amtLPUser,
-          _params.amtABorrow,
-          _params.amtBBorrow,
-          _params.amtLPBorrow,
-          _params.amtAMin,
-          _params.amtBMin
-        ),
-        _params.pid
-      )
+    bytes memory executeData = abi.encodeWithSelector(
+      _spell.addLiquidityWMasterChef.selector,
+      _params.tokenA,
+      _params.tokenB,
+      ISpookySwapSpellV2.Amounts(
+        _params.amtAUser,
+        _params.amtBUser,
+        _params.amtLPUser,
+        _params.amtABorrow,
+        _params.amtBBorrow,
+        _params.amtLPBorrow,
+        _params.amtAMin,
+        _params.amtBMin
+      ),
+      _params.poolId
     );
+
+    bank.execute(_positionId, address(_spell), executeData);
 
     doRefundETH();
     doRefund(_params.tokenA);
@@ -155,31 +143,28 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
   }
 
   function reducePosition(
-    address _spell,
     uint _positionId,
+    ISpookySwapSpellV2 _spell,
     RemoveLiquidityParams memory _params
   ) external {
     address lp = factory.getPair(_params.tokenA, _params.tokenB);
     address rewardToken = getRewardToken(_positionId);
 
-    bank.execute(
-      _positionId,
-      _spell,
-      abi.encodeWithSelector(
-        removeLiquiditySelector,
-        _params.tokenA,
-        _params.tokenB,
-        ISpookySwapSpellV2.RepayAmounts(
-          _params.amtLPTake,
-          _params.amtLPWithdraw,
-          _params.amtARepay,
-          _params.amtBRepay,
-          _params.amtLPRepay,
-          _params.amtAMin,
-          _params.amtBMin
-        )
+    bytes memory executeData = abi.encodeWithSelector(
+      _spell.removeLiquidityWMasterChef.selector,
+      _params.tokenA,
+      _params.tokenB,
+      ISpookySwapSpellV2.RepayAmounts(
+        _params.amtLPTake,
+        _params.amtLPWithdraw,
+        _params.amtARepay,
+        _params.amtBRepay,
+        _params.amtLPRepay,
+        _params.amtAMin,
+        _params.amtBMin
       )
     );
+    bank.execute(_positionId, address(_spell), executeData);
 
     doRefundETH();
     doRefund(_params.tokenA);
@@ -188,8 +173,9 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
     doRefund(rewardToken);
   }
 
-  function harvestRewards(address _spell, uint _positionId) external {
-    bank.execute(_positionId, _spell, abi.encodeWithSelector(harvestRewardsSelector));
+  function harvestRewards(uint _positionId, ISpookySwapSpellV2 _spell) external {
+    bytes memory executeData = abi.encodeWithSelector(_spell.harvestWMasterChef.selector);
+    bank.execute(_positionId, address(_spell), executeData);
 
     address rewardToken = getRewardToken(_positionId);
 
@@ -205,14 +191,14 @@ contract SpookySwapSpellV2Integration is BaseIntegration {
     IMasterChefBooV2 chef = IMasterChefBooV2(wrapper.chef());
 
     // get info for calculating rewards
-    (uint pid, uint startRewardTokenPerShare) = wrapper.decodeId(collateralId);
+    (uint poolId, uint startRewardTokenPerShare) = wrapper.decodeId(collateralId);
     uint endRewardTokenPerShare = wrapper.accRewardPerShare();
-    (uint totalSupply, ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
+    (uint totalSupply, ) = chef.userInfo(poolId, address(wrapper)); // total lp from wrapper deposited in Chef
 
     // pending rewards separates into two parts
     // 1. pending rewards that are in the wrapper contract
     // 2. pending rewards that wrapper hasn't claimed from Chef's contract
-    uint pendingRewardFromChef = chef.pendingBOO(pid, address(wrapper));
+    uint pendingRewardFromChef = chef.pendingBOO(poolId, address(wrapper));
     endRewardTokenPerShare += (pendingRewardFromChef * PRECISION) / totalSupply;
 
     uint stReward = (startRewardTokenPerShare * collateralAmount).divCeil(PRECISION);
