@@ -8,6 +8,7 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensio
 
 import './UtilsETH.sol';
 import '../../contracts/eth/curve/CurveSpellV1Integration.sol';
+import '../../interfaces/eth/curve/ICurveSpellV1.sol';
 
 import 'forge-std/console2.sol';
 
@@ -15,7 +16,7 @@ contract CurveSpellV1Test is UtilsETH {
   using SafeERC20 for IERC20;
 
   IBankETH bank = IBankETH(bankAddress);
-  address spell = 0x8b947D8448CFFb89EF07A6922b74fBAbac219795;
+  ICurveSpellV1 spell = ICurveSpellV1(0x8b947D8448CFFb89EF07A6922b74fBAbac219795);
   address lp = 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490;
   ICurveRegistry registry = ICurveRegistry(0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c);
   CurveSpellV1Integration integration;
@@ -80,7 +81,7 @@ contract CurveSpellV1Test is UtilsETH {
 
     // call contract
     vm.startPrank(alice);
-    positionId = integration.openPosition(address(spell), params);
+    positionId = integration.openPosition(spell, params);
     vm.stopPrank();
 
     // user info after
@@ -137,7 +138,7 @@ contract CurveSpellV1Test is UtilsETH {
 
     // call contract
     vm.startPrank(alice);
-    integration.increasePosition(_positionId, address(spell), params);
+    integration.increasePosition(_positionId, spell, params);
     vm.stopPrank();
 
     // user info after
@@ -195,7 +196,7 @@ contract CurveSpellV1Test is UtilsETH {
 
     // call contract
     vm.startPrank(alice);
-    integration.reducePosition(address(spell), _positionId, params);
+    integration.reducePosition(_positionId, spell, params);
     vm.stopPrank();
 
     // user info after
@@ -239,7 +240,7 @@ contract CurveSpellV1Test is UtilsETH {
 
     // call contract
     vm.startPrank(alice);
-    integration.harvestRewards(address(spell), _positionId);
+    integration.harvestRewards(_positionId, spell);
     vm.stopPrank();
 
     // user info after
@@ -272,7 +273,7 @@ contract CurveSpellV1Test is UtilsETH {
 
     // call contract
     vm.startPrank(alice);
-    integration.harvestRewards(address(spell), _positionId);
+    integration.harvestRewards(_positionId, spell);
     vm.stopPrank();
 
     // user info after
