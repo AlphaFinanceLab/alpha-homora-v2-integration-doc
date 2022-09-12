@@ -61,8 +61,8 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
     testReducePosition(positionId);
   }
 
-  // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
   function testOpenPosition() internal returns (uint positionId) {
+    // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
     TraderJoeSpellV3Integration.AddLiquidityParams memory params = TraderJoeSpellV3Integration
       .AddLiquidityParams(
         tokenA,

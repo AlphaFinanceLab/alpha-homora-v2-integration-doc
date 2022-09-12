@@ -43,4 +43,6 @@ interface ISushiswapSpellV1 {
     address tokenB,
     RepayAmounts calldata amt
   ) external;
+
+  function harvestWMasterChef() external;
 }

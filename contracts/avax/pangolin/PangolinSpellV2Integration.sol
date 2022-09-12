@@ -33,7 +33,7 @@ contract PangolinSpellV2Integration is BaseIntegration {
     uint amtLPUser; // Supplied LP token amount
     uint amtABorrow; // Borrow tokenA amount
     uint amtBBorrow; // Borrow tokenB amount
-    uint amtLPBorrow; // Borrow LP token amount (should be 0, now we support only borrowing based tokens)
+    uint amtLPBorrow; // Borrow LP token amount (should be 0, not support borrowing LP tokens)
     uint amtAMin; // Desired tokenA amount (slippage control)
     uint amtBMin; // Desired tokenB amount (slippage control)
     uint poolId; // pool id of MinichefV2
@@ -43,10 +43,10 @@ contract PangolinSpellV2Integration is BaseIntegration {
     address tokenA; // The first token of pool
     address tokenB; // The second token of pool
     uint amtLPTake; // Amount of LP being removed from the position
-    uint amtLPWithdraw; // Amount of LP that user receives (remainings will be converted to based tokens).
+    uint amtLPWithdraw; // Amount of LP that user receives (remainings are converted to underlying tokens).
     uint amtARepay; // Amount of tokenA that user repays (repay all -> type(uint).max)
     uint amtBRepay; // Amount of tokenB that user repays (repay all -> type(uint).max)
-    uint amtLPRepay; // Amount of LP that user repays (should be 0, now we support only borrowing based tokens).
+    uint amtLPRepay; // Amount of LP that user repays (should be 0, not support borrowing LP tokens).
     uint amtAMin; // Desired tokenA amount (slippage control)
     uint amtBMin; // Desired tokenB amount (slippage control)
   }

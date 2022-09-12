@@ -59,7 +59,7 @@ contract CurveSpellV1Test is UtilsETH {
     params.lp = lp;
     params.amtLPUser = 100;
     params.amtLPBorrow = 0;
-    params.minLPMint = 0;
+    params.minLPMint = 0; // for actual run, please put minLPMint (slippage), or else you get attacked.
     params.pid = 0;
     params.gid = 0;
 
@@ -113,7 +113,7 @@ contract CurveSpellV1Test is UtilsETH {
     params.lp = lp;
     params.amtLPUser = 100;
     params.amtLPBorrow = 0;
-    params.minLPMint = 0;
+    params.minLPMint = 0; // for actual run, please put minLPMint (slippage), or else you get attacked.
     params.pid = 0;
     params.gid = 0;
 
@@ -182,8 +182,9 @@ contract CurveSpellV1Test is UtilsETH {
       params.amtsRepay[i] = type(uint).max; // repay 100% of tokenB
     }
     params.amtLPRepay = 0; // (always 0 since LP borrow is disallowed)
+    // for actual run, please put amtsMin[i] (slippage), or else you get attacked.
     for (uint i = 0; i < tokens.length; i++) {
-      params.amtsMin[i] = 0; // amount of token that user expects after withdrawal
+      params.amtsMin[i] = 0;
     }
 
     // user info before

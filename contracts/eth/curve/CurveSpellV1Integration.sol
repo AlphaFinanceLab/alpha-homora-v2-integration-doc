@@ -23,9 +23,6 @@ contract CurveSpellV1Integration is BaseIntegration {
   IBankETH bank; // homora bank
   ICurveRegistry registry; // sushi swap factory
 
-  // harvest()
-  bytes4 harvestRewardsSelector = 0x4641257d;
-
   uint constant PRECISION = 10**18;
   address public crv;
 
@@ -34,7 +31,7 @@ contract CurveSpellV1Integration is BaseIntegration {
     uint[3] amtsUser; // Supplied underlying token amounts
     uint amtLPUser; // Supplied LP token amount
     uint[3] amtsBorrow; // Borrow underlying token amounts
-    uint amtLPBorrow; // Borrow LP token amount
+    uint amtLPBorrow; // Borrow LP token amount (should be 0, not support borrowing LP tokens)
     uint minLPMint; // Desired LP token amount (slippage control)
     uint pid; // Curve pool id for the pool
     uint gid; // Curve gauge id for the pool
@@ -43,9 +40,9 @@ contract CurveSpellV1Integration is BaseIntegration {
   struct RemoveLiquidity3Params {
     address lp; // LP token for the pool
     uint amtLPTake; // Amount of LP being removed from the position
-    uint amtLPWithdraw; // Amount of LP being received from removing the position (remaining will be converted to each tokens)
-    uint[3] amtsRepay; // Repay tokens amount (repay all -> type(uint).max)
-    uint amtLPRepay; // Repay LP token amount
+    uint amtLPWithdraw; // Amount of LP that user receives (remainings are converted to underlying tokens).
+    uint[3] amtsRepay; // Amount of tokens that user repays (repay all -> type(uint).max)
+    uint amtLPRepay; // Amount of LP that user repays (should be 0, not support borrowing LP tokens).
     uint[3] amtsMin; // Desired underlying token amounts (slippage control)
   }
 

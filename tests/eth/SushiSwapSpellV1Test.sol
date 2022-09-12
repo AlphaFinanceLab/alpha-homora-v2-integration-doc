@@ -8,9 +8,9 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensio
 
 import './UtilsETH.sol';
 import '../../contracts/eth/sushiswap/SushiswapSpellV1Integration.sol';
-import '../../../../interfaces/eth/sushiswap/ISushiswapFactory.sol';
-import '../../../../interfaces/eth/sushiswap/ISushiswapSpellV1.sol';
-import '../../../../interfaces/eth/sushiswap/IWMasterChef.sol';
+import '../../interfaces/eth/sushiswap/ISushiswapFactory.sol';
+import '../../interfaces/eth/sushiswap/ISushiswapSpellV1.sol';
+import '../../interfaces/eth/sushiswap/IWMasterChef.sol';
 
 import 'forge-std/console2.sol';
 
@@ -23,12 +23,10 @@ contract SushiswapSpellV1Test is UtilsETH {
   ISushiswapSpellV1 spell = ISushiswapSpellV1(0xDc9c7A2Bae15dD89271ae5701a6f4DB147BAa44C); // spell to interact with
   ISushiswapFactory factory = ISushiswapFactory(0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac); // sushiswap factory
 
-  // TODO: change tokenA you want
+  // TODO: change tokenA, tokenB, poolID you want
   address tokenA = WETH; // The first token of pool
-  // TODO: change tokenB you want
   address tokenB = DAI; // The second token of pool
-  // TODO: change pool id you want
-  uint pid = 2; // Pool id of MasterChef
+  uint poolId = 2; // Pool id of MasterChef
 
   SushiswapSpellV1Integration integration;
   address lp;
@@ -63,14 +61,21 @@ contract SushiswapSpellV1Test is UtilsETH {
   }
 
   function testOpenPosition() internal returns (uint positionId) {
-    uint amtAUser = 100 * 10**IERC20Metadata(tokenA).decimals();
-    uint amtBUser = (1 * 10**IERC20Metadata(tokenB).decimals()) / 1000;
-    uint amtLPUser = 100;
-    uint amtABorrow = amtAUser;
-    uint amtBBorrow = amtBUser;
-    uint amtLPBorrow = 0;
-    uint amtAMin = 0;
-    uint amtBMin = 0;
+    // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
+    SushiswapSpellV1Integration.AddLiquidityParams memory params = SushiswapSpellV1Integration
+      .AddLiquidityParams(
+        tokenA,
+        tokenB,
+        100 * 10**IERC20Metadata(tokenA).decimals(),
+        10**IERC20Metadata(tokenB).decimals() / 1000,
+        100,
+        100 * 10**IERC20Metadata(tokenA).decimals(),
+        10**IERC20Metadata(tokenB).decimals() / 1000,
+        0,
+        0,
+        0,
+        poolId
+      );
 
     // user info before
     uint userBalanceTokenA_before = balanceOf(tokenA, alice);
@@ -82,22 +87,7 @@ contract SushiswapSpellV1Test is UtilsETH {
 
     // call contract
     vm.startPrank(alice);
-    positionId = integration.openPosition(
-      address(spell),
-      SushiswapSpellV1Integration.AddLiquidityParams(
-        tokenA,
-        tokenB,
-        amtAUser,
-        amtBUser,
-        amtLPUser,
-        amtABorrow,
-        amtBBorrow,
-        amtLPBorrow,
-        amtAMin,
-        amtBMin,
-        pid
-      )
-    );
+    positionId = integration.openPosition(spell, params);
     vm.stopPrank();
 
     // user info after
@@ -122,14 +112,21 @@ contract SushiswapSpellV1Test is UtilsETH {
     // find reward token address
     address rewardToken = address(wrapper.sushi());
 
-    uint amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
-    uint amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
-    uint amtLPUser = 100;
-    uint amtABorrow = amtAUser;
-    uint amtBBorrow = amtBUser;
-    uint amtLPBorrow = 0;
-    uint amtAMin = 0;
-    uint amtBMin = 0;
+    // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
+    SushiswapSpellV1Integration.AddLiquidityParams memory params = SushiswapSpellV1Integration
+      .AddLiquidityParams(
+        tokenA,
+        tokenB,
+        10**IERC20Metadata(tokenA).decimals(),
+        10**IERC20Metadata(tokenB).decimals(),
+        100,
+        10**IERC20Metadata(tokenA).decimals(),
+        10**IERC20Metadata(tokenB).decimals(),
+        0,
+        0,
+        0,
+        poolId
+      );
 
     // user info before
     uint userBalanceTokenA_before = balanceOf(tokenA, alice);
@@ -139,23 +136,7 @@ contract SushiswapSpellV1Test is UtilsETH {
 
     // call contract
     vm.startPrank(alice);
-    integration.increasePosition(
-      _positionId,
-      address(spell),
-      SushiswapSpellV1Integration.AddLiquidityParams(
-        tokenA,
-        tokenB,
-        amtAUser,
-        amtBUser,
-        amtLPUser,
-        amtABorrow,
-        amtBBorrow,
-        amtLPBorrow,
-        amtAMin,
-        amtBMin,
-        pid
-      )
-    );
+    integration.increasePosition(_positionId, spell, params);
     vm.stopPrank();
 
     // user info after
@@ -188,13 +169,19 @@ contract SushiswapSpellV1Test is UtilsETH {
     // find reward token address
     address rewardToken = address(wrapper.sushi());
 
-    uint amtLPTake = collateralAmount; // withdraw 100% of position
-    uint amtLPWithdraw = 100; // return only 100 LP to user
-    uint amtARepay = type(uint).max; // repay 100% of tokenA
-    uint amtBRepay = type(uint).max; // repay 100% of tokenB
-    uint amtLPRepay = 0; // (always 0 since LP borrow is disallowed)
-    uint amtAMin = 0; // amount of tokenA that user expects after withdrawal
-    uint amtBMin = 0; // amount of tokenB that user expects after withdrawal
+    // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
+    SushiswapSpellV1Integration.RemoveLiquidityParams memory params = SushiswapSpellV1Integration
+      .RemoveLiquidityParams(
+        tokenA,
+        tokenB,
+        collateralAmount,
+        100,
+        type(uint).max,
+        type(uint).max,
+        0,
+        0,
+        0
+      );
 
     // user info before
     uint userBalanceTokenA_before = balanceOf(tokenA, alice);
@@ -204,21 +191,7 @@ contract SushiswapSpellV1Test is UtilsETH {
 
     // call contract
     vm.startPrank(alice);
-    integration.reducePosition(
-      address(spell),
-      _positionId,
-      SushiswapSpellV1Integration.RemoveLiquidityParams(
-        tokenA,
-        tokenB,
-        amtLPTake,
-        amtLPWithdraw,
-        amtARepay,
-        amtBRepay,
-        amtLPRepay,
-        amtAMin,
-        amtBMin
-      )
-    );
+    integration.reducePosition(_positionId, spell, params);
     vm.stopPrank();
 
     // user info after
@@ -230,7 +203,7 @@ contract SushiswapSpellV1Test is UtilsETH {
     require(userBalanceTokenA_after > userBalanceTokenA_before, 'incorrect user balance of tokenA');
     require(userBalanceTokenB_after > userBalanceTokenB_before, 'incorrect user balance of tokenB');
     require(
-      userBalanceLP_after - userBalanceLP_before == amtLPWithdraw,
+      userBalanceLP_after - userBalanceLP_before == params.amtLPWithdraw,
       'incorrect user balance of LP'
     );
     require(
@@ -256,7 +229,7 @@ contract SushiswapSpellV1Test is UtilsETH {
 
     // call contract
     vm.startPrank(alice);
-    integration.harvestRewards(address(spell), _positionId);
+    integration.harvestRewards(_positionId, spell);
     vm.stopPrank();
 
     // user info after
@@ -289,7 +262,7 @@ contract SushiswapSpellV1Test is UtilsETH {
 
     // call contract
     vm.startPrank(alice);
-    integration.harvestRewards(address(spell), _positionId);
+    integration.harvestRewards(_positionId, spell);
     vm.stopPrank();
 
     // user info after

@@ -9,11 +9,11 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensio
 import '../../BaseIntegration.sol';
 import '../../utils/HomoraMath.sol';
 
-import '../../../../interfaces/eth/IBankETH.sol';
-import '../../../../interfaces/eth/uniswapv2/IWStakingRewards.sol';
-import '../../../../interfaces/eth/uniswapv2/IStakingRewards.sol';
-import '../../../../interfaces/eth/uniswapv2/IUniswapV2SpellV1.sol';
-import '../../../../interfaces/eth/uniswapv2/IUniswapV2Factory.sol';
+import '../../../interfaces/eth/IBankETH.sol';
+import '../../../interfaces/eth/uniswapv2/IWStakingRewards.sol';
+import '../../../interfaces/eth/uniswapv2/IStakingRewards.sol';
+import '../../../interfaces/eth/uniswapv2/IUniswapV2SpellV1.sol';
+import '../../../interfaces/eth/uniswapv2/IUniswapV2Factory.sol';
 
 import 'forge-std/console2.sol';
 
@@ -23,21 +23,6 @@ contract UniswapV2SpellV1Integration is BaseIntegration {
 
   IBankETH bank; // homora bank
   IUniswapV2Factory factory; // uniswapv2 factory
-
-  // addLiquidityWERC20(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256))
-  bytes4 addLiquidityWERC20Selector = 0xcc9b1880;
-
-  // addLiquidityWStakingRewards(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),address)
-  bytes4 addLiquidityWStkaingRewardsSelector = 0xd57cdec5;
-
-  // removeLiquidityWERC20(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256))
-  bytes4 removeLiquidityWERC20Selector = 0x1387d96d;
-
-  // removeLiquidityWStakingRewards(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256),address)
-  bytes4 removeLiquidityWStakingRewardsSelector = 0xb2cfde44;
-
-  // harvestWStakingRewards(address)
-  bytes4 harvestRewardsSelector = 0x45174f18;
   uint constant PRECISION = 10**18;
 
   struct AddLiquidityParams {
@@ -48,7 +33,7 @@ contract UniswapV2SpellV1Integration is BaseIntegration {
     uint amtLPUser; // Supplied LP token amount
     uint amtABorrow; // Borrow tokenA amount
     uint amtBBorrow; // Borrow tokenB amount
-    uint amtLPBorrow; // Borrow LP token amount
+    uint amtLPBorrow; // Borrow LP token amount (should be 0, not support borrowing LP tokens)
     uint amtAMin; // Desired tokenA amount (slippage control)
     uint amtBMin; // Desired tokenB amount (slippage control)
     address wstaking; // WStaking address
@@ -58,12 +43,12 @@ contract UniswapV2SpellV1Integration is BaseIntegration {
     address tokenA; // The first token of pool
     address tokenB; // The second token of pool
     uint amtLPTake; // Amount of LP being removed from the position
-    uint amtLPWithdraw; // Amount of LP being received from removing the position (remaining will be converted to tokenA, tokenB)
-    uint amtARepay; // Repay tokenA amount
-    uint amtBRepay; // Repay tokenB amount
-    uint amtLPRepay; // Repay LP token amount
-    uint amtAMin; // Desired tokenA amount
-    uint amtBMin; // Desired tokenB amount
+    uint amtLPWithdraw; // Amount of LP that user receives (remainings are converted to underlying tokens).
+    uint amtARepay; // Amount of tokenA that user repays (repay all -> type(uint).max)
+    uint amtBRepay; // Amount of tokenB that user repays (repay all -> type(uint).max)
+    uint amtLPRepay; // Amount of LP that user repays (should be 0, not support borrowing LP tokens).
+    uint amtAMin; // Desired tokenA amount (slippage control)
+    uint amtBMin; // Desired tokenB amount (slippage control)
     address wstaking; // WStaking address
   }
 
@@ -72,7 +57,7 @@ contract UniswapV2SpellV1Integration is BaseIntegration {
     factory = _factory;
   }
 
-  function openPosition(address _spell, AddLiquidityParams memory _params)
+  function openPositionWStaking(IUniswapV2SpellV1 _spell, AddLiquidityParams memory _params)
     external
     returns (uint positionId)
   {
@@ -88,26 +73,24 @@ contract UniswapV2SpellV1Integration is BaseIntegration {
     IERC20(_params.tokenB).safeTransferFrom(msg.sender, address(this), _params.amtBUser);
     IERC20(lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
 
-    positionId = bank.execute(
-      0, // (0 is reserved for opening new position)
-      _spell,
-      abi.encodeWithSelector(
-        addLiquidityWStkaingRewardsSelector, // FIXME: change selector to addLiquidityWERC20Selector for liquidity providing
-        _params.tokenA,
-        _params.tokenB,
-        IUniswapV2SpellV1.Amounts(
-          _params.amtAUser,
-          _params.amtBUser,
-          _params.amtLPUser,
-          _params.amtABorrow,
-          _params.amtBBorrow,
-          _params.amtLPBorrow,
-          _params.amtAMin,
-          _params.amtBMin
-        ),
-        _params.wstaking
-      )
+    bytes memory executeData = abi.encodeWithSelector(
+      _spell.addLiquidityWStakingRewards.selector,
+      _params.tokenA,
+      _params.tokenB,
+      IUniswapV2SpellV1.Amounts(
+        _params.amtAUser,
+        _params.amtBUser,
+        _params.amtLPUser,
+        _params.amtABorrow,
+        _params.amtBBorrow,
+        _params.amtLPBorrow,
+        _params.amtAMin,
+        _params.amtBMin
+      ),
+      _params.wstaking
     );
+    // (0 is reserved for opening new position)
+    positionId = bank.execute(0, address(_spell), executeData);
 
     doRefundETH();
     doRefund(_params.tokenA);
@@ -115,9 +98,9 @@ contract UniswapV2SpellV1Integration is BaseIntegration {
     doRefund(lp);
   }
 
-  function increasePosition(
+  function increasePositionWStaking(
     uint _positionId,
-    address _spell,
+    IUniswapV2SpellV1 _spell,
     AddLiquidityParams memory _params
   ) external {
     address lp = factory.getPair(_params.tokenA, _params.tokenB);
@@ -133,26 +116,23 @@ contract UniswapV2SpellV1Integration is BaseIntegration {
     IERC20(_params.tokenB).safeTransferFrom(msg.sender, address(this), _params.amtBUser);
     IERC20(lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
 
-    bank.execute(
-      _positionId,
-      _spell,
-      abi.encodeWithSelector(
-        addLiquidityWStkaingRewardsSelector, // FIXME: change selector to addLiquidityWERC20Selector for liquidity providing
-        _params.tokenA,
-        _params.tokenB,
-        IUniswapV2SpellV1.Amounts(
-          _params.amtAUser,
-          _params.amtBUser,
-          _params.amtLPUser,
-          _params.amtABorrow,
-          _params.amtBBorrow,
-          _params.amtLPBorrow,
-          _params.amtAMin,
-          _params.amtBMin
-        ),
-        _params.wstaking
-      )
+    bytes memory executeData = abi.encodeWithSelector(
+      _spell.addLiquidityWStakingRewards.selector,
+      _params.tokenA,
+      _params.tokenB,
+      IUniswapV2SpellV1.Amounts(
+        _params.amtAUser,
+        _params.amtBUser,
+        _params.amtLPUser,
+        _params.amtABorrow,
+        _params.amtBBorrow,
+        _params.amtLPBorrow,
+        _params.amtAMin,
+        _params.amtBMin
+      ),
+      _params.wstaking
     );
+    bank.execute(_positionId, address(_spell), executeData);
 
     doRefundETH();
     doRefund(_params.tokenA);
@@ -161,33 +141,29 @@ contract UniswapV2SpellV1Integration is BaseIntegration {
     doRefund(rewardToken);
   }
 
-  function reducePosition(
-    address _spell,
+  function reducePositionWStaking(
     uint _positionId,
+    IUniswapV2SpellV1 _spell,
     RemoveLiquidityParams memory _params
   ) external {
     address lp = factory.getPair(_params.tokenA, _params.tokenB);
     address rewardToken = getRewardToken(_positionId);
-
-    bank.execute(
-      _positionId,
-      _spell,
-      abi.encodeWithSelector(
-        removeLiquidityWStakingRewardsSelector, // FIXME: change selector to removeLiquidityWERC20Selector for liquidity providing
-        _params.tokenA,
-        _params.tokenB,
-        IUniswapV2SpellV1.RepayAmounts(
-          _params.amtLPTake,
-          _params.amtLPWithdraw,
-          _params.amtARepay,
-          _params.amtBRepay,
-          _params.amtLPRepay,
-          _params.amtAMin,
-          _params.amtBMin
-        ),
-        _params.wstaking
-      )
+    bytes memory executeData = abi.encodeWithSelector(
+      _spell.removeLiquidityWStakingRewards.selector,
+      _params.tokenA,
+      _params.tokenB,
+      IUniswapV2SpellV1.RepayAmounts(
+        _params.amtLPTake,
+        _params.amtLPWithdraw,
+        _params.amtARepay,
+        _params.amtBRepay,
+        _params.amtLPRepay,
+        _params.amtAMin,
+        _params.amtBMin
+      ),
+      _params.wstaking
     );
+    bank.execute(_positionId, address(_spell), executeData);
 
     doRefundETH();
     doRefund(_params.tokenA);
@@ -196,15 +172,18 @@ contract UniswapV2SpellV1Integration is BaseIntegration {
     doRefund(lp);
   }
 
-  function harvestRewards(
-    address _spell,
+  function harvestRewardsWStaking(
     uint _positionId,
+    IUniswapV2SpellV1 _spell,
     address wstaking
   ) external {
-    bank.execute(_positionId, _spell, abi.encodeWithSelector(harvestRewardsSelector, wstaking));
+    bytes memory executeData = abi.encodeWithSelector(
+      _spell.harvestWStakingRewards.selector,
+      wstaking
+    );
+    bank.execute(_positionId, address(_spell), executeData);
 
     address rewardToken = getRewardToken(_positionId);
-
     doRefund(rewardToken);
   }
 

@@ -9,12 +9,12 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensio
 import '../../BaseIntegration.sol';
 import '../../utils/HomoraMath.sol';
 
-import '../../../../interfaces/eth/IBankETH.sol';
-import '../../../../interfaces/eth/sushiswap/IWMasterChef.sol';
-import '../../../../interfaces/eth/sushiswap/IMasterChef.sol';
-import '../../../../interfaces/eth/sushiswap/ISushiswapSpellV1.sol';
+import '../../../interfaces/eth/IBankETH.sol';
+import '../../../interfaces/eth/sushiswap/IWMasterChef.sol';
+import '../../../interfaces/eth/sushiswap/IMasterChef.sol';
+import '../../../interfaces/eth/sushiswap/ISushiswapSpellV1.sol';
 
-import '../../../../interfaces/eth/sushiswap/ISushiswapFactory.sol';
+import '../../../interfaces/eth/sushiswap/ISushiswapFactory.sol';
 
 import 'forge-std/console2.sol';
 
@@ -23,22 +23,8 @@ contract SushiswapSpellV1Integration is BaseIntegration {
   using HomoraMath for uint;
 
   IBankETH bank; // homora bank
-  ISushiswapFactory factory; // sushi swap factory
+  ISushiswapFactory factory; // sushiswap factory
 
-  // addLiquidityWERC20(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256))
-  bytes4 addLiquidityWERC20Selector = 0xcc9b1880;
-
-  // addLiquidityWMasterChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256),uint256)
-  bytes4 addLiquidityWMasterChefSelector = 0xe07d904e;
-
-  // removeLiquidityWERC20(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256))
-  bytes4 removeLiquidityWERC20Selector = 0x1387d96d;
-
-  // removeLiquidityWMasterChef(address,address,(uint256,uint256,uint256,uint256,uint256,uint256,uint256))
-  bytes4 removeLiquidityWMasterChefSelector = 0x95723b1c;
-
-  // harvestWMasterChef()
-  bytes4 harvestRewardsSelector = 0x40a65ad2;
   uint constant PRECISION = 10**12;
 
   struct AddLiquidityParams {
@@ -49,22 +35,22 @@ contract SushiswapSpellV1Integration is BaseIntegration {
     uint amtLPUser; // Supplied LP token amount
     uint amtABorrow; // Borrow tokenA amount
     uint amtBBorrow; // Borrow tokenB amount
-    uint amtLPBorrow; // Borrow LP token amount
+    uint amtLPBorrow; // Borrow LP token amount (should be 0, not support borrowing LP tokens)
     uint amtAMin; // Desired tokenA amount (slippage control)
     uint amtBMin; // Desired tokenB amount (slippage control)
-    uint pid; // pool id of MasterChef
+    uint poolId; // pool id of MasterChef
   }
 
   struct RemoveLiquidityParams {
     address tokenA; // The first token of pool
     address tokenB; // The second token of pool
     uint amtLPTake; // Amount of LP being removed from the position
-    uint amtLPWithdraw; // Amount of LP being received from removing the position (remaining will be converted to tokenA, tokenB)
-    uint amtARepay; // Repay tokenA amount
-    uint amtBRepay; // Repay tokenB amount
-    uint amtLPRepay; // Repay LP token amount
-    uint amtAMin; // Desired tokenA amount
-    uint amtBMin; // Desired tokenB amount
+    uint amtLPWithdraw; // Amount of LP that user receives (remainings are converted to underlying tokens).
+    uint amtARepay; // Amount of tokenA that user repays (repay all -> type(uint).max)
+    uint amtBRepay; // Amount of tokenB that user repays (repay all -> type(uint).max)
+    uint amtLPRepay; // Amount of LP that user repays (should be 0, not support borrowing LP tokens).
+    uint amtAMin; // Desired tokenA amount (slippage control)
+    uint amtBMin; // Desired tokenB amount (slippage control)
   }
 
   constructor(IBankETH _bank, ISushiswapFactory _factory) {
@@ -72,7 +58,7 @@ contract SushiswapSpellV1Integration is BaseIntegration {
     factory = _factory;
   }
 
-  function openPosition(address _spell, AddLiquidityParams memory _params)
+  function openPosition(ISushiswapSpellV1 _spell, AddLiquidityParams memory _params)
     external
     returns (uint positionId)
   {
@@ -88,26 +74,24 @@ contract SushiswapSpellV1Integration is BaseIntegration {
     IERC20(_params.tokenB).safeTransferFrom(msg.sender, address(this), _params.amtBUser);
     IERC20(lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
 
-    positionId = bank.execute(
-      0, // (0 is reserved for opening new position)
-      _spell,
-      abi.encodeWithSelector(
-        addLiquidityWMasterChefSelector, // FIXME: change selector to addLiquidityWERC20Selector for liquidity providing
-        _params.tokenA,
-        _params.tokenB,
-        ISushiswapSpellV1.Amounts(
-          _params.amtAUser,
-          _params.amtBUser,
-          _params.amtLPUser,
-          _params.amtABorrow,
-          _params.amtBBorrow,
-          _params.amtLPBorrow,
-          _params.amtAMin,
-          _params.amtBMin
-        ),
-        _params.pid
-      )
+    bytes memory executeData = abi.encodeWithSelector(
+      _spell.addLiquidityWMasterChef.selector,
+      _params.tokenA,
+      _params.tokenB,
+      ISushiswapSpellV1.Amounts(
+        _params.amtAUser,
+        _params.amtBUser,
+        _params.amtLPUser,
+        _params.amtABorrow,
+        _params.amtBBorrow,
+        _params.amtLPBorrow,
+        _params.amtAMin,
+        _params.amtBMin
+      ),
+      _params.poolId
     );
+    // (0 is reserved for opening new position)
+    positionId = bank.execute(0, address(_spell), executeData);
 
     doRefundETH();
     doRefund(_params.tokenA);
@@ -117,7 +101,7 @@ contract SushiswapSpellV1Integration is BaseIntegration {
 
   function increasePosition(
     uint _positionId,
-    address _spell,
+    ISushiswapSpellV1 _spell,
     AddLiquidityParams memory _params
   ) external {
     address lp = factory.getPair(_params.tokenA, _params.tokenB);
@@ -133,26 +117,23 @@ contract SushiswapSpellV1Integration is BaseIntegration {
     IERC20(_params.tokenB).safeTransferFrom(msg.sender, address(this), _params.amtBUser);
     IERC20(lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
 
-    bank.execute(
-      _positionId,
-      _spell,
-      abi.encodeWithSelector(
-        addLiquidityWMasterChefSelector, // FIXME: change selector to addLiquidityWERC20Selector for liquidity providing
-        _params.tokenA,
-        _params.tokenB,
-        ISushiswapSpellV1.Amounts(
-          _params.amtAUser,
-          _params.amtBUser,
-          _params.amtLPUser,
-          _params.amtABorrow,
-          _params.amtBBorrow,
-          _params.amtLPBorrow,
-          _params.amtAMin,
-          _params.amtBMin
-        ),
-        _params.pid
-      )
+    bytes memory executeData = abi.encodeWithSelector(
+      _spell.addLiquidityWMasterChef.selector,
+      _params.tokenA,
+      _params.tokenB,
+      ISushiswapSpellV1.Amounts(
+        _params.amtAUser,
+        _params.amtBUser,
+        _params.amtLPUser,
+        _params.amtABorrow,
+        _params.amtBBorrow,
+        _params.amtLPBorrow,
+        _params.amtAMin,
+        _params.amtBMin
+      ),
+      _params.poolId
     );
+    bank.execute(_positionId, address(_spell), executeData);
 
     doRefundETH();
     doRefund(_params.tokenA);
@@ -162,31 +143,28 @@ contract SushiswapSpellV1Integration is BaseIntegration {
   }
 
   function reducePosition(
-    address _spell,
     uint _positionId,
+    ISushiswapSpellV1 _spell,
     RemoveLiquidityParams memory _params
   ) external {
     address lp = factory.getPair(_params.tokenA, _params.tokenB);
     address rewardToken = getRewardToken(_positionId);
 
-    bank.execute(
-      _positionId,
-      _spell,
-      abi.encodeWithSelector(
-        removeLiquidityWMasterChefSelector, // FIXME: change selector to removeLiquidityWERC20Selector for liquidity providing
-        _params.tokenA,
-        _params.tokenB,
-        ISushiswapSpellV1.RepayAmounts(
-          _params.amtLPTake,
-          _params.amtLPWithdraw,
-          _params.amtARepay,
-          _params.amtBRepay,
-          _params.amtLPRepay,
-          _params.amtAMin,
-          _params.amtBMin
-        )
+    bytes memory executeData = abi.encodeWithSelector(
+      _spell.removeLiquidityWMasterChef.selector,
+      _params.tokenA,
+      _params.tokenB,
+      ISushiswapSpellV1.RepayAmounts(
+        _params.amtLPTake,
+        _params.amtLPWithdraw,
+        _params.amtARepay,
+        _params.amtBRepay,
+        _params.amtLPRepay,
+        _params.amtAMin,
+        _params.amtBMin
       )
     );
+    bank.execute(_positionId, address(_spell), executeData);
 
     doRefundETH();
     doRefund(_params.tokenA);
@@ -195,8 +173,12 @@ contract SushiswapSpellV1Integration is BaseIntegration {
     doRefund(lp);
   }
 
-  function harvestRewards(address _spell, uint _positionId) external {
-    bank.execute(_positionId, _spell, abi.encodeWithSelector(harvestRewardsSelector));
+  function harvestRewards(uint _positionId, ISushiswapSpellV1 _spell) external {
+    bank.execute(
+      _positionId,
+      address(_spell),
+      abi.encodeWithSelector(_spell.harvestWMasterChef.selector)
+    );
 
     address rewardToken = getRewardToken(_positionId);
 
@@ -212,8 +194,8 @@ contract SushiswapSpellV1Integration is BaseIntegration {
     IMasterChef chef = IMasterChef(wrapper.chef());
 
     // get info for calculating rewards
-    (uint pid, uint startRewardTokenPerShare) = wrapper.decodeId(collateralId);
-    uint endRewardTokenPerShare = calculateAccRewardPerShareChef(chef, pid);
+    (uint poolId, uint startRewardTokenPerShare) = wrapper.decodeId(collateralId);
+    uint endRewardTokenPerShare = calculateAccRewardPerShareChef(chef, poolId);
 
     uint stReward = (startRewardTokenPerShare * collateralAmount).divCeil(PRECISION);
     uint enReward = (endRewardTokenPerShare * collateralAmount) / PRECISION;
@@ -221,7 +203,7 @@ contract SushiswapSpellV1Integration is BaseIntegration {
     pendingRewards = (enReward > stReward) ? enReward - stReward : 0;
   }
 
-  function calculateAccRewardPerShareChef(IMasterChef _chef, uint _pid)
+  function calculateAccRewardPerShareChef(IMasterChef _chef, uint _poolId)
     internal
     view
     returns (uint accSushiPerShare)
@@ -229,7 +211,7 @@ contract SushiswapSpellV1Integration is BaseIntegration {
     address lpToken;
     uint allocPoint;
     uint lastRewardBlock;
-    (lpToken, allocPoint, lastRewardBlock, accSushiPerShare) = _chef.poolInfo(_pid);
+    (lpToken, allocPoint, lastRewardBlock, accSushiPerShare) = _chef.poolInfo(_poolId);
     if (block.number <= lastRewardBlock) {
       return accSushiPerShare;
     }
