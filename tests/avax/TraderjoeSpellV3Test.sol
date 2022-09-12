@@ -8,10 +8,10 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensio
 
 import './UtilsAVAX.sol';
 import '../../contracts/avax/traderjoe/TraderJoeSpellV3Integration.sol';
-import '../../../../interfaces/avax/traderjoe/ITraderJoeFactory.sol';
-import '../../../../interfaces/avax/traderjoe/ITraderJoeSpellV3.sol';
-import '../../../../interfaces/avax/traderjoe/IBoostedMasterChefJoe.sol';
-import '../../../../interfaces/avax/traderjoe/IWBoostedMasterChefJoeWorker.sol';
+import '../../interfaces/avax/traderjoe/ITraderJoeFactory.sol';
+import '../../interfaces/avax/traderjoe/ITraderJoeSpellV3.sol';
+import '../../interfaces/avax/traderjoe/IBoostedMasterChefJoe.sol';
+import '../../interfaces/avax/traderjoe/IWBoostedMasterChefJoeWorker.sol';
 
 import 'forge-std/console2.sol';
 
@@ -24,12 +24,10 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
   ITraderJoeSpellV3 spell = ITraderJoeSpellV3(0x28F1BdBc52Ad1aAab71660f4B33179335054BE6A); // spell to interact with
   ITraderJoeFactory factory = ITraderJoeFactory(0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10); // trader joe factory
 
-  // TODO: change tokenA you want
+  // TODO: change tokenA, tokenB, poolID you want
   address tokenA = WAVAX; // The first token of pool
-  // TODO: change tokenB you want
   address tokenB = USDC; // The second token of pool
-  // TODO: change pool id you want
-  uint pid = 0; // Pool id of BoostedMasterChefJoe
+  uint poolId = 0; // Pool id of BoostedMasterChefJoe
 
   TraderJoeSpellV3Integration integration;
   address lp;
@@ -63,15 +61,22 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
     testReducePosition(positionId);
   }
 
+  // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
   function testOpenPosition() internal returns (uint positionId) {
-    uint amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
-    uint amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
-    uint amtLPUser = 100;
-    uint amtABorrow = amtAUser;
-    uint amtBBorrow = amtBUser;
-    uint amtLPBorrow = 0;
-    uint amtAMin = 0;
-    uint amtBMin = 0;
+    TraderJoeSpellV3Integration.AddLiquidityParams memory params = TraderJoeSpellV3Integration
+      .AddLiquidityParams(
+        tokenA,
+        tokenB,
+        10**IERC20Metadata(tokenA).decimals(),
+        10**IERC20Metadata(tokenB).decimals(),
+        100,
+        10**IERC20Metadata(tokenA).decimals(),
+        10**IERC20Metadata(tokenB).decimals(),
+        0,
+        0,
+        0,
+        poolId
+      );
 
     // user info before
     uint userBalanceTokenA_before = balanceOf(tokenA, alice);
@@ -83,22 +88,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
 
     // call contract
     vm.startPrank(alice);
-    positionId = integration.openPosition(
-      address(spell),
-      TraderJoeSpellV3Integration.AddLiquidityParams(
-        tokenA,
-        tokenB,
-        amtAUser,
-        amtBUser,
-        amtLPUser,
-        amtABorrow,
-        amtBBorrow,
-        amtLPBorrow,
-        amtAMin,
-        amtBMin,
-        pid
-      )
-    );
+    positionId = integration.openPosition(spell, params);
     vm.stopPrank();
 
     // user info after
@@ -123,15 +113,21 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
     // find reward token address
     address rewardToken = address(wrapper.joe());
 
-    uint amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
-    uint amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
-    uint amtLPUser = 100;
-    uint amtABorrow = amtAUser;
-    uint amtBBorrow = amtBUser;
-    uint amtLPBorrow = 0;
-    uint amtAMin = 0;
-    uint amtBMin = 0;
-
+    // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
+    TraderJoeSpellV3Integration.AddLiquidityParams memory params = TraderJoeSpellV3Integration
+      .AddLiquidityParams(
+        tokenA,
+        tokenB,
+        10**IERC20Metadata(tokenA).decimals(),
+        10**IERC20Metadata(tokenB).decimals(),
+        100,
+        10**IERC20Metadata(tokenA).decimals(),
+        10**IERC20Metadata(tokenB).decimals(),
+        0,
+        0,
+        0,
+        poolId
+      );
     // user info before
     uint userBalanceTokenA_before = balanceOf(tokenA, alice);
     uint userBalanceTokenB_before = balanceOf(tokenB, alice);
@@ -140,23 +136,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
 
     // call contract
     vm.startPrank(alice);
-    integration.increasePosition(
-      _positionId,
-      address(spell),
-      TraderJoeSpellV3Integration.AddLiquidityParams(
-        tokenA,
-        tokenB,
-        amtAUser,
-        amtBUser,
-        amtLPUser,
-        amtABorrow,
-        amtBBorrow,
-        amtLPBorrow,
-        amtAMin,
-        amtBMin,
-        pid
-      )
-    );
+    integration.increasePosition(_positionId, spell, params);
     vm.stopPrank();
 
     // user info after
@@ -186,13 +166,19 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
     // find reward token address
     address rewardToken = address(wrapper.joe());
 
-    uint amtLPTake = collateralAmount; // withdraw 100% of position
-    uint amtLPWithdraw = 100; // return only 100 LP to user
-    uint amtARepay = type(uint).max; // repay 100% of tokenA
-    uint amtBRepay = type(uint).max; // repay 100% of tokenB
-    uint amtLPRepay = 0; // (always 0 since LP borrow is disallowed)
-    uint amtAMin = 0; // amount of tokenA that user expects after withdrawal
-    uint amtBMin = 0; // amount of tokenB that user expects after withdrawal
+    // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
+    TraderJoeSpellV3Integration.RemoveLiquidityParams memory params = TraderJoeSpellV3Integration
+      .RemoveLiquidityParams(
+        tokenA,
+        tokenB,
+        collateralAmount,
+        100,
+        type(uint).max,
+        type(uint).max,
+        0,
+        0,
+        0
+      );
 
     // user info before
     uint userBalanceTokenA_before = balanceOf(tokenA, alice);
@@ -202,21 +188,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
 
     // call contract
     vm.startPrank(alice);
-    integration.reducePosition(
-      address(spell),
-      _positionId,
-      TraderJoeSpellV3Integration.RemoveLiquidityParams(
-        tokenA,
-        tokenB,
-        amtLPTake,
-        amtLPWithdraw,
-        amtARepay,
-        amtBRepay,
-        amtLPRepay,
-        amtAMin,
-        amtBMin
-      )
-    );
+    integration.reducePosition(_positionId, spell, params);
     vm.stopPrank();
 
     // user info after
@@ -228,7 +200,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
     require(userBalanceTokenA_after > userBalanceTokenA_before, 'incorrect user balance of tokenA');
     require(userBalanceTokenB_after > userBalanceTokenB_before, 'incorrect user balance of tokenB');
     require(
-      userBalanceLP_after - userBalanceLP_before == amtLPWithdraw,
+      userBalanceLP_after - userBalanceLP_before == params.amtLPWithdraw,
       'incorrect user balance of LP'
     );
     require(
@@ -254,7 +226,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
 
     // call contract
     vm.startPrank(alice);
-    integration.harvestRewards(address(spell), _positionId);
+    integration.harvestRewards(_positionId, spell);
     vm.stopPrank();
 
     // user info after
@@ -287,7 +259,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
 
     // call contract
     vm.startPrank(alice);
-    integration.harvestRewards(address(spell), _positionId);
+    integration.harvestRewards(_positionId, spell);
     vm.stopPrank();
 
     // user info after

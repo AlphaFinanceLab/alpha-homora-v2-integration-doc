@@ -33,7 +33,7 @@ contract PangolinSpellV2Integration is BaseIntegration {
     uint amtLPUser; // Supplied LP token amount
     uint amtABorrow; // Borrow tokenA amount
     uint amtBBorrow; // Borrow tokenB amount
-    uint amtLPBorrow; // Borrow LP token amount (should be 0, now we only support only borrowing based tokens)
+    uint amtLPBorrow; // Borrow LP token amount (should be 0, now we support only borrowing based tokens)
     uint amtAMin; // Desired tokenA amount (slippage control)
     uint amtBMin; // Desired tokenB amount (slippage control)
     uint poolId; // pool id of MinichefV2
@@ -44,9 +44,9 @@ contract PangolinSpellV2Integration is BaseIntegration {
     address tokenB; // The second token of pool
     uint amtLPTake; // Amount of LP being removed from the position
     uint amtLPWithdraw; // Amount of LP that user receives (remainings will be converted to based tokens).
-    uint amtARepay; // Amount of tokenA that user repays.
-    uint amtBRepay; // Amount of tokenB that user repays.
-    uint amtLPRepay; // Amount of LP that user repays (should be 0, now we only support only borrowing based tokens).
+    uint amtARepay; // Amount of tokenA that user repays (repay all -> type(uint).max)
+    uint amtBRepay; // Amount of tokenB that user repays (repay all -> type(uint).max)
+    uint amtLPRepay; // Amount of LP that user repays (should be 0, now we support only borrowing based tokens).
     uint amtAMin; // Desired tokenA amount (slippage control)
     uint amtBMin; // Desired tokenB amount (slippage control)
   }
@@ -73,7 +73,7 @@ contract PangolinSpellV2Integration is BaseIntegration {
     IERC20(lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
 
     bytes memory executeData = abi.encodeWithSelector(
-      IPangolinSpellV2.addLiquidityWMiniChef.selector,
+      _spell.addLiquidityWMiniChef.selector,
       _params.tokenA,
       _params.tokenB,
       IPangolinSpellV2.Amounts(
@@ -117,7 +117,7 @@ contract PangolinSpellV2Integration is BaseIntegration {
     IERC20(lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
 
     bytes memory executeData = abi.encodeWithSelector(
-      IPangolinSpellV2.addLiquidityWMiniChef.selector,
+      _spell.addLiquidityWMiniChef.selector,
       _params.tokenA,
       _params.tokenB,
       IPangolinSpellV2.Amounts(
@@ -150,7 +150,7 @@ contract PangolinSpellV2Integration is BaseIntegration {
     address rewardToken = getRewardToken(_positionId);
 
     bytes memory executeData = abi.encodeWithSelector(
-      IPangolinSpellV2.removeLiquidityWMiniChef.selector,
+      _spell.removeLiquidityWMiniChef.selector,
       _params.tokenA,
       _params.tokenB,
       IPangolinSpellV2.RepayAmounts(
@@ -176,7 +176,7 @@ contract PangolinSpellV2Integration is BaseIntegration {
     bank.execute(
       _positionId,
       address(_spell),
-      abi.encodeWithSelector(IPangolinSpellV2.harvestWMiniChefRewards.selector)
+      abi.encodeWithSelector(_spell.harvestWMiniChefRewards.selector)
     );
 
     // find reward token address from wrapper
