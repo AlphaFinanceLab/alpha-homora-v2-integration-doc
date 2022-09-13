@@ -2,7 +2,7 @@
 
 Note: the following example scripts are Solidity langauge based on Foundry framework.
 
-Recap from [here](https://hackmd.io/Exjnxbq4Tg6TAOlULziVhQ).
+Recap from [here](../readme.md).
 
 You can open/adjust with the position via the bank contract by calling `bank.execute(position_id, spell_address, data)` function.
 
@@ -20,7 +20,7 @@ Different DEXes require different inputs.
 
 Spell Address: See Appendix A
 
-Example of how to integrate with Homora [here](https://github.com/AlphaFinanceLab/alpha-homora-v2-integration-doc/blob/master/contracts/eth/uniswapv2/UniswapV2SpellV1Integration.sol)
+Example of how to integrate with Homora [here](../contracts/eth/UniswapV2SpellV1IntegrationEth.sol)
 
 Functions:
 
@@ -52,7 +52,7 @@ uint256 rewardPerShare = collateralId;
 
 Spell Address: See Appendix A
 
-Example of how to integrate with Homora [here](https://github.com/AlphaFinanceLab/alpha-homora-v2-integration-doc/blob/master/contracts/eth/sushiswap/SushiswapSpellV1Integration.sol)
+Example of how to integrate with Homora [here](../contracts/eth/SushiswapSpellV1IntegrationEth.sol)
 
 Functions:
 
@@ -88,7 +88,7 @@ IWMasterChef wrapper = IWMasterChef(collateralTokenAddress);
 
 Spell Address: [0x8b947D8448CFFb89EF07A6922b74fBAbac219795](https://etherscan.io/address/0x8b947D8448CFFb89EF07A6922b74fBAbac219795)
 
-Example of how to integrate with Homora [here](https://github.com/AlphaFinanceLab/alpha-homora-v2-integration-doc/blob/master/contracts/eth/curve/CurveSpellV1Integration.sol)
+Example of how to integrate with Homora [here](../contracts/eth/CurveSpellV1IntegrationEth.sol)
 
 Functions:
 

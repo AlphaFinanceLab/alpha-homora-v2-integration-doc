@@ -7,11 +7,11 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/Sa
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 import './UtilsAVAX.sol';
-import '../../contracts/avax/pangolin/PangolinSpellV2Integration.sol';
-import '../../interfaces/avax/pangolin/IMiniChefV2PNG.sol';
-import '../../interfaces/avax/pangolin/IWMiniChefV2PNG.sol';
-import '../../interfaces/avax/pangolin/IPangolinSpellV2.sol';
-import '../../interfaces/avax/pangolin/IPangolinFactory.sol';
+import '../../contracts/avax/PangolinSpellV2IntegrationAvax.sol';
+import '../../interfaces/homorav2/wrappers/IWMiniChefV2PNG.sol';
+import '../../interfaces/homorav2/spells/IPangolinSpellV2.sol';
+import '../../interfaces/pangolin/IMiniChefV2PNG.sol';
+import '../../interfaces/pangolin/IPangolinFactory.sol';
 
 import 'forge-std/console2.sol';
 
@@ -24,14 +24,12 @@ contract PangolinSpellV2Test is UtilsAVAX {
   IPangolinSpellV2 spell = IPangolinSpellV2(0x966bbec3ac35452133B5c236b4139C07b1e2c9b1); // spell to interact with
   IPangolinFactory factory = IPangolinFactory(0xefa94DE7a4656D787667C749f7E1223D71E9FD88); // pangolin factory
 
-  // TODO: change tokenA you want
+  // TODO: change tokenA, tokenB, poolID you want
   address tokenA = WBTCe; // The first token of pool
-  // TODO: change tokenB you want
   address tokenB = WAVAX; // The second token of pool
-  // TODO: change pool id you want
-  uint pid = 5; // Pool id of MinichefV2
+  uint poolId = 5; // Pool id of MinichefV2
 
-  PangolinSpellV2Integration integration;
+  PangolinSpellV2IntegrationAvax integration;
   address lp;
 
   function setUp() public override {
@@ -42,7 +40,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
     vm.label(0xa67CF61b0b9BC39c6df04095A118e53BFb9303c7, 'wMinichefPNG');
 
     // deploy integration contract
-    integration = new PangolinSpellV2Integration(bank, factory);
+    integration = new PangolinSpellV2IntegrationAvax(bank, factory);
     lp = factory.getPair(tokenA, tokenB);
 
     // prepare fund for user
@@ -66,14 +64,21 @@ contract PangolinSpellV2Test is UtilsAVAX {
   }
 
   function testOpenPosition() internal returns (uint positionId) {
-    uint amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
-    uint amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
-    uint amtLPUser = 100;
-    uint amtABorrow = amtAUser;
-    uint amtBBorrow = amtBUser;
-    uint amtLPBorrow = 0;
-    uint amtAMin = 0;
-    uint amtBMin = 0;
+    // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
+    PangolinSpellV2IntegrationAvax.AddLiquidityParams memory params = PangolinSpellV2IntegrationAvax
+      .AddLiquidityParams({
+        tokenA: tokenA,
+        tokenB: tokenB,
+        amtAUser: 10**IERC20Metadata(tokenA).decimals(),
+        amtBUser: 10**IERC20Metadata(tokenB).decimals(),
+        amtLPUser: 100,
+        amtABorrow: 10**IERC20Metadata(tokenA).decimals(),
+        amtBBorrow: 10**IERC20Metadata(tokenB).decimals(),
+        amtLPBorrow: 0,
+        amtAMin: 0,
+        amtBMin: 0,
+        poolId: poolId
+      });
 
     // user info before
     uint userBalanceTokenA_before = balanceOf(tokenA, alice);
@@ -85,22 +90,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
 
     // call contract
     vm.startPrank(alice);
-    positionId = integration.openPosition(
-      address(spell),
-      PangolinSpellV2Integration.AddLiquidityParams(
-        tokenA,
-        tokenB,
-        amtAUser,
-        amtBUser,
-        amtLPUser,
-        amtABorrow,
-        amtBBorrow,
-        amtLPBorrow,
-        amtAMin,
-        amtBMin,
-        pid
-      )
-    );
+    positionId = integration.openPosition(spell, params);
     vm.stopPrank();
 
     // user info after
@@ -125,14 +115,21 @@ contract PangolinSpellV2Test is UtilsAVAX {
     // find reward token address
     address rewardToken = address(wrapper.png());
 
-    uint amtAUser = 1 * 10**IERC20Metadata(tokenA).decimals();
-    uint amtBUser = 1 * 10**IERC20Metadata(tokenB).decimals();
-    uint amtLPUser = 100;
-    uint amtABorrow = amtAUser;
-    uint amtBBorrow = amtBUser;
-    uint amtLPBorrow = 0;
-    uint amtAMin = 0;
-    uint amtBMin = 0;
+    // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
+    PangolinSpellV2IntegrationAvax.AddLiquidityParams memory params = PangolinSpellV2IntegrationAvax
+      .AddLiquidityParams({
+        tokenA: tokenA,
+        tokenB: tokenB,
+        amtAUser: 10**IERC20Metadata(tokenA).decimals(),
+        amtBUser: 10**IERC20Metadata(tokenB).decimals(),
+        amtLPUser: 100,
+        amtABorrow: 10**IERC20Metadata(tokenA).decimals(),
+        amtBBorrow: 10**IERC20Metadata(tokenB).decimals(),
+        amtLPBorrow: 0,
+        amtAMin: 0,
+        amtBMin: 0,
+        poolId: poolId
+      });
 
     // user info before
     uint userBalanceTokenA_before = balanceOf(tokenA, alice);
@@ -142,23 +139,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
 
     // call contract
     vm.startPrank(alice);
-    integration.increasePosition(
-      _positionId,
-      address(spell),
-      PangolinSpellV2Integration.AddLiquidityParams(
-        tokenA,
-        tokenB,
-        amtAUser,
-        amtBUser,
-        amtLPUser,
-        amtABorrow,
-        amtBBorrow,
-        amtLPBorrow,
-        amtAMin,
-        amtBMin,
-        pid
-      )
-    );
+    integration.increasePosition(_positionId, spell, params);
     vm.stopPrank();
 
     // user info after
@@ -188,13 +169,20 @@ contract PangolinSpellV2Test is UtilsAVAX {
     // find reward token address
     address rewardToken = address(wrapper.png());
 
-    uint amtLPTake = collateralAmount; // withdraw 100% of position
-    uint amtLPWithdraw = 100; // return only 100 LP to user
-    uint amtARepay = type(uint).max; // repay 100% of tokenA
-    uint amtBRepay = type(uint).max; // repay 100% of tokenB
-    uint amtLPRepay = 0; // (always 0 since LP borrow is disallowed)
-    uint amtAMin = 0; // amount of tokenA that user expects after withdrawal
-    uint amtBMin = 0; // amount of tokenB that user expects after withdrawal
+    // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
+    // identify type(uint).max if to amtRepay if you want to fully repay the accrued debt.
+    PangolinSpellV2IntegrationAvax.RemoveLiquidityParams
+      memory params = PangolinSpellV2IntegrationAvax.RemoveLiquidityParams({
+        tokenA: tokenA,
+        tokenB: tokenB,
+        amtLPTake: collateralAmount,
+        amtLPWithdraw: 100,
+        amtARepay: type(uint).max,
+        amtBRepay: type(uint).max,
+        amtLPRepay: 0,
+        amtAMin: 0,
+        amtBMin: 0
+      });
 
     // user info before
     uint userBalanceTokenA_before = balanceOf(tokenA, alice);
@@ -204,21 +192,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
 
     // call contract
     vm.startPrank(alice);
-    integration.reducePosition(
-      address(spell),
-      _positionId,
-      PangolinSpellV2Integration.RemoveLiquidityParams(
-        tokenA,
-        tokenB,
-        amtLPTake,
-        amtLPWithdraw,
-        amtARepay,
-        amtBRepay,
-        amtLPRepay,
-        amtAMin,
-        amtBMin
-      )
-    );
+    integration.reducePosition(_positionId, spell, params);
     vm.stopPrank();
 
     // user info after
@@ -230,7 +204,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
     require(userBalanceTokenA_after > userBalanceTokenA_before, 'incorrect user balance of tokenA');
     require(userBalanceTokenB_after > userBalanceTokenB_before, 'incorrect user balance of tokenB');
     require(
-      userBalanceLP_after - userBalanceLP_before == amtLPWithdraw,
+      userBalanceLP_after - userBalanceLP_before == params.amtLPWithdraw,
       'incorrect user balance of LP'
     );
     require(
@@ -256,7 +230,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
 
     // call contract
     vm.startPrank(alice);
-    integration.harvestRewards(address(spell), _positionId);
+    integration.harvestRewards(_positionId, spell);
     vm.stopPrank();
 
     // user info after
@@ -276,7 +250,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
     (, address collateralTokenAddress, , ) = bank.getPositionInfo(_positionId);
     IWMiniChefV2PNG wrapper = IWMiniChefV2PNG(collateralTokenAddress);
     IMiniChefV2PNG chef = IMiniChefV2PNG(wrapper.chef());
-    chef.updatePool(pid);
+    chef.updatePool(poolId);
 
     // call contract
     uint pendingRewards = integration.getPendingRewards(_positionId);
@@ -290,7 +264,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
 
     // call contract
     vm.startPrank(alice);
-    integration.harvestRewards(address(spell), _positionId);
+    integration.harvestRewards(_positionId, spell);
     vm.stopPrank();
 
     // user info after

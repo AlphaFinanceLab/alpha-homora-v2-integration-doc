@@ -6,7 +6,7 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.s
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../Utils.sol';
-import '../../interfaces/eth/IBankETH.sol';
+import '../../interfaces/homorav2/banks/IBankETH.sol';
 
 contract UtilsETH is Utils {
   using SafeERC20 for IERC20;

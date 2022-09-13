@@ -2,7 +2,7 @@
 
 Note: the following example scripts are Solidity langauge based on Foundry framework.
 
-Recap from [here](https://hackmd.io/Exjnxbq4Tg6TAOlULziVhQ).
+Recap from [here](../readme.md).
 
 You can open/adjust with the position via the bank contract by calling `bank.execute(position_id, spell_address, data)` function.
 
@@ -20,7 +20,7 @@ Different DEXes require different inputs.
 
 Spell Address: See appendix A
 
-Example of how to integrate with Homora [here](https://github.com/AlphaFinanceLab/alpha-homora-v2-integration-doc/blob/master/contracts/ftm/spookyswap/SpookySwapSpellV2Integration.sol)
+Example of how to integrate with Homora [here](../contracts/ftm/SpookySwapSpellV2IntegrationFtm.sol)
 
 Functions:
 
@@ -55,7 +55,7 @@ IWMasterChefBooV2 wrapper = IWMasterChefBooV2(collateralTokenAddress);
 
 Spell Address: See appendix A
 
-Example of how to integrate with Homora [here](https://github.com/AlphaFinanceLab/alpha-homora-v2-integration-doc/blob/master/contracts/ftm/spiritswap/SpiritSwapSpellV1Integration.sol)
+Example of how to integrate with Homora [here](../contracts/ftm/SpiritSwapSpellV1IntegrationFtm.sol)
 
 Functions:
 
@@ -89,7 +89,7 @@ IWMasterChefSpirit wrapper = IWMasterChefSpirit(collateralTokenAddress);
 
 Spell Address: See Appendix A
 
-Example of how to integrate with Homora [here](https://github.com/AlphaFinanceLab/alpha-homora-v2-integration-doc/blob/master/contracts/ftm/beets/BeetsSpellV1Integration.sol)
+Example of how to integrate with Homora [here](../contracts/ftm/BeetsSpellV1IntegrationFtm.sol)
 
 Functions:
 

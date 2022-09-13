@@ -2,7 +2,7 @@
 
 Note: the following example scripts are Solidity langauge based on Foundry framework.
 
-Recap from [here](https://hackmd.io/Exjnxbq4Tg6TAOlULziVhQ).
+Recap from [here](../readme.md).
 
 You can open/adjust with the position via the bank contract by calling `bank.execute(position_id, spell_address, data)` function.
 
@@ -22,7 +22,7 @@ There are many types of wrapper contracts that support pools on traderJoe depend
 
 Spell Address: See Appendix A
 
-Example of how to integrate with Homora [here](https://github.com/AlphaFinanceLab/alpha-homora-v2-integration-doc/blob/master/contracts/avax/traderjoe/TraderJoeSpellV3Integration.sol)
+Example of how to integrate with Homora [here](../contracts/avax/TraderJoeSpellV3IntegrationAvax.sol)
 
 Functions:
 

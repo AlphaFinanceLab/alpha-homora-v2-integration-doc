@@ -8,13 +8,13 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensio
 
 import './UtilsOP.sol';
 import '../../contracts/utils/uniswapv3/TickMath.sol';
-import '../../contracts/op/uniswapv3/UniswapV3SpellIntegration.sol';
-import '../../../../interfaces/op/uniswapv3/IOptimalSwap.sol';
-import '../../../../interfaces/op/uniswapv3/IUniswapV3Factory.sol';
-import '../../../../interfaces/op/uniswapv3/IUniswapV3Router.sol';
-import '../../../../interfaces/op/uniswapv3/IWUniswapV3Position.sol';
-import '../../../../interfaces/op/uniswapv3/IUniswapV3PositionManager.sol';
-import '../../../../interfaces/op/uniswapv3/IUniswapV3Spell.sol';
+import '../../contracts/op/UniswapV3SpellIntegrationOp.sol';
+import '../../interfaces/homorav2/IUniswapv3OptimalSwap.sol';
+import '../../interfaces/homorav2/wrappers/IWUniswapV3Position.sol';
+import '../../interfaces/homorav2/spells/IUniswapV3Spell.sol';
+import '../../interfaces/uniswapv3/IUniswapV3Factory.sol';
+import '../../interfaces/uniswapv3/IUniswapV3Router.sol';
+import '../../interfaces/uniswapv3/IUniswapV3PositionManager.sol';
 
 import 'forge-std/console2.sol';
 
@@ -30,13 +30,12 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
   IWUniswapV3Position wrapper = IWUniswapV3Position(0xAf8C59De82f10d21749952b3d44CcF6Ab97Ca0c7); // uniswap v3 wrapper
   IUniswapV3PositionManager npm =
     IUniswapV3PositionManager(0xC36442b4a4522E871399CD717aBDD847Ab11FE88); // uniswap v3 position manager
-  IOptimalSwap optimalSwap = IOptimalSwap(0xC781Cf972AB97601efeCFfA53202A410f52FEF92); // uniswap v3 optimal swap
+  IUniswapV3OptimalSwap optimalSwap =
+    IUniswapV3OptimalSwap(0xC781Cf972AB97601efeCFfA53202A410f52FEF92); // uniswap v3 optimal swap
 
-  // TODO: change token0 you want
+  // TODO: change token0, token1, fee you want
   address token0 = WETH; // The first token of pool
-  // TODO: change token1 you want
   address token1 = USDC; // The second token of pool
-
   uint24 fee = 500;
 
   /// @dev The minimum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**-128
@@ -44,7 +43,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
   /// @dev The maximum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**128
   int24 internal constant MAX_TICK = -MIN_TICK;
 
-  UniswapV3SpellIntegration integration;
+  UniswapV3SpellIntegrationOp integration;
   address pool;
   uint24 tickSpacing;
 
@@ -54,7 +53,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     vm.label(address(spell), 'spell');
 
     // deploy integration contract
-    integration = new UniswapV3SpellIntegration(bank, factory, npm);
+    integration = new UniswapV3SpellIntegrationOp(bank, factory, npm);
     pool = factory.getPool(token0, token1, fee);
     require(pool != address(0), 'pool is zero address');
     tickSpacing = uint24(IUniswapV3Pool(pool).tickSpacing());
@@ -92,7 +91,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     // call contract
     vm.startPrank(alice, alice);
     positionId = integration.openPosition(
-      address(spell),
+      spell,
       IUniswapV3Spell.OpenPositionParams(
         token0,
         token1,
@@ -130,7 +129,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     vm.startPrank(alice, alice);
     integration.increasePosition(
       positionId,
-      address(spell),
+      spell,
       IUniswapV3Spell.AddLiquidityParams(
         1 * 10**IERC20Metadata(token0).decimals(),
         10 * 10**IERC20Metadata(token1).decimals(),
@@ -167,8 +166,8 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     // call contract
     vm.startPrank(alice, alice);
     integration.reducePosition(
-      address(spell),
       positionId,
+      spell,
       IUniswapV3Spell.RemoveLiquidityParams(amtLPTake, 0, 0, 0, 0, type(uint).max)
     );
     vm.stopPrank();
@@ -192,7 +191,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
 
     // call contract
     vm.startPrank(alice, alice);
-    integration.harvestFee(address(spell), positionId, false);
+    integration.harvestFee(positionId, spell, false);
     vm.stopPrank();
 
     // user info after
@@ -218,8 +217,8 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     // call contract
     vm.startPrank(alice, alice);
     integration.reinvest(
-      address(spell),
       positionId,
+      spell,
       IUniswapV3Spell.ReinvestParams(0, 0, false, 0, 0, type(uint).max)
     );
     vm.stopPrank();
@@ -239,8 +238,8 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     // call contract
     vm.startPrank(alice, alice);
     integration.closePosition(
-      address(spell),
       positionId,
+      spell,
       IUniswapV3Spell.ClosePositionParams(0, 0, type(uint).max, false)
     );
     vm.stopPrank();
@@ -269,7 +268,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
 
     // call contract
     vm.startPrank(alice, alice);
-    integration.harvestFee(address(spell), positionId, false);
+    integration.harvestFee(positionId, spell, false);
     vm.stopPrank();
 
     // user info after
@@ -279,8 +278,8 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     console2.log('claimed fee0: ', userBalanceToken0_after - userBalanceToken0_before);
     console2.log('claimed fee1: ', userBalanceToken1_after - userBalanceToken1_before);
 
-    require(userBalanceToken0_after - userBalanceToken0_before == fee0);
-    require(userBalanceToken1_after - userBalanceToken1_before == fee1);
+    require(userBalanceToken0_after - userBalanceToken0_before == fee0, '!fee0');
+    require(userBalanceToken1_after - userBalanceToken1_before == fee1, '!fee1');
   }
 
   function testOpenPositionWithOptimalSwap() internal {
@@ -312,7 +311,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     // call contract
     vm.startPrank(alice, alice);
     integration.openPosition(
-      address(spell),
+      spell,
       IUniswapV3Spell.OpenPositionParams(
         token0,
         token1,
@@ -348,7 +347,7 @@ contract UniswapV3SpellV3SpellIntegrationTest is UtilsOP {
     uint amountIn
   ) internal {
     deal(tokenIn, caller, amountIn);
-    require(IERC20(tokenIn).balanceOf(caller) >= amountIn);
+    require(IERC20(tokenIn).balanceOf(caller) >= amountIn, '!amountIn');
 
     vm.startPrank(caller);
     if (IERC20(tokenIn).allowance(caller, address(router)) != type(uint).max) {

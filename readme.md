@@ -158,7 +158,7 @@ bank.execute(
 )
 ```
 
-Different DEXes require different inputs, please see section [here](#DEXes-amp-Interaction-types)
+Different DEXes require different inputs, please see section [here](#dexes--interaction-types)
 
 ### Query function
 
@@ -236,3 +236,7 @@ As mentioned earlier, parameter inputs for `bank.execute()` depends on DEXes on 
 - [Interact with HomoraV2 on Avax](./docs/homoraAVAX.md)
 - [Interact with HomoraV2 on Fantom](./docs/homoraFTM.md)
 - [Interact with HomoraV2 on Optimism](./docs/homoraOP.md)
+
+### FAQ
+
+see FAQ session [here](/./docs/FAQ.md)

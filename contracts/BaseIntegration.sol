@@ -5,8 +5,6 @@ pragma solidity 0.8.16;
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/IERC20.sol';
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import '../../interfaces/avax/IBankAVAX.sol';
-
 contract BaseIntegration {
   using SafeERC20 for IERC20;
 
