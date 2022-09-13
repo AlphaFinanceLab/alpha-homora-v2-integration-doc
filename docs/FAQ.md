@@ -39,10 +39,6 @@
 
    - The factor of the borrow token is different from its volatility. We allow to borrow more if it is more stable.
 
-4. What is the difference between harvest reward and get pending reward?
-   - harvest reward is getting the reward from farming. On the other hand, querying pending reward is get the expected reward amount from farming.
-   - changing word from `get` to `query` should solve the issue.
-
 ## Verifying contract
 
 1. Contract code in [public repo](https://github.com/AlphaFinanceLab/alpha-homora-v2-contract) is not align with ABI file in gitbook.
