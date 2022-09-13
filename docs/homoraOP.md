@@ -2,7 +2,7 @@
 
 Note: the following example scripts are Solidity langauge based on Foundry framework.
 
-Recap from [here](https://hackmd.io/Exjnxbq4Tg6TAOlULziVhQ).
+Recap from [here](../readme.md).
 
 You can open/adjust with the position via the bank contract by calling `bank.execute(position_id, spell_address, data)` function.
 
@@ -20,7 +20,7 @@ Different DEXes require different inputs.
 
 Spell Address: See Appendix A
 
-Example of how to integrate with Homora [here](https://github.com/AlphaFinanceLab/alpha-homora-v2-integration-doc/blob/master/tests/op/UniswapV3SpellTest.sol)
+Example of how to integrate with Homora [here](../contracts/op/UniswapV3SpellIntegrationOp.sol)
 
 Functions:
 
