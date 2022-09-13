@@ -7,12 +7,12 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/Sa
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 import './UtilsFTM.sol';
-import '../../contracts/ftm/spiritswap/SpiritSwapSpellV1Integration.sol';
-import '../../interfaces/ftm/IBankFTM.sol';
-import '../../interfaces/ftm/spiritswap/ISpiritSwapFactory.sol';
-import '../../interfaces/ftm/spiritswap/ISpiritSwapSpellV1.sol';
-import '../../interfaces/ftm/spiritswap/IMasterChefSpirit.sol';
-import '../../interfaces/ftm/spiritswap/IWMasterChefSpirit.sol';
+import '../../contracts/ftm/SpiritSwapSpellV1IntegrationFtm.sol';
+import '../../interfaces/homorav2/banks/IBankFTM.sol';
+import '../../interfaces/homorav2/spells/ISpiritSwapSpellV1.sol';
+import '../../interfaces/homorav2/wrappers/IWMasterChefSpirit.sol';
+import '../../interfaces/spiritswap/ISpiritSwapFactory.sol';
+import '../../interfaces/spiritswap/IMasterChefSpirit.sol';
 
 import 'forge-std/console2.sol';
 
@@ -30,7 +30,7 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
   address tokenB = USDC; // The second token of pool
   uint poolId = 4; // Pool id of MasterchefBoo
 
-  SpiritSwapSpellV1Integration integration;
+  SpiritSwapSpellV1IntegrationFtm integration;
   address lp;
 
   function setUp() public override {
@@ -39,7 +39,7 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
     vm.label(address(spell), 'spell');
 
     // deploy integration contract
-    integration = new SpiritSwapSpellV1Integration(bank, factory);
+    integration = new SpiritSwapSpellV1IntegrationFtm(bank, factory);
     lp = factory.getPair(tokenA, tokenB);
 
     // prepare fund for user
@@ -64,8 +64,8 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
 
   function testOpenPosition() internal returns (uint positionId) {
     // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
-    SpiritSwapSpellV1Integration.AddLiquidityParams memory params = SpiritSwapSpellV1Integration
-      .AddLiquidityParams(
+    SpiritSwapSpellV1IntegrationFtm.AddLiquidityParams
+      memory params = SpiritSwapSpellV1IntegrationFtm.AddLiquidityParams(
         tokenA,
         tokenB,
         10**IERC20Metadata(tokenA).decimals(),
@@ -111,8 +111,8 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
     address rewardToken = address(wrapper.rewardToken());
 
     // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
-    SpiritSwapSpellV1Integration.AddLiquidityParams memory params = SpiritSwapSpellV1Integration
-      .AddLiquidityParams(
+    SpiritSwapSpellV1IntegrationFtm.AddLiquidityParams
+      memory params = SpiritSwapSpellV1IntegrationFtm.AddLiquidityParams(
         tokenA,
         tokenB,
         10**IERC20Metadata(tokenA).decimals(),
@@ -163,8 +163,8 @@ contract SpiritSwapSpellV1Test is UtilsFTM {
     address rewardToken = address(wrapper.rewardToken());
 
     // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
-    SpiritSwapSpellV1Integration.RemoveLiquidityParams memory params = SpiritSwapSpellV1Integration
-      .RemoveLiquidityParams(
+    SpiritSwapSpellV1IntegrationFtm.RemoveLiquidityParams
+      memory params = SpiritSwapSpellV1IntegrationFtm.RemoveLiquidityParams(
         tokenA,
         tokenB,
         collateralAmount,

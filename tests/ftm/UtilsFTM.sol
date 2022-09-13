@@ -7,7 +7,7 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/Sa
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 import '../Utils.sol';
-import '../../interfaces/ftm/IBankFTM.sol';
+import '../../interfaces/homorav2/banks/IBankFTM.sol';
 
 contract UtilsFTM is Utils {
   using SafeERC20 for IERC20;

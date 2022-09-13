@@ -7,10 +7,10 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/Sa
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 import './UtilsETH.sol';
-import '../../contracts/eth/sushiswap/SushiswapSpellV1Integration.sol';
-import '../../interfaces/eth/sushiswap/ISushiswapFactory.sol';
-import '../../interfaces/eth/sushiswap/ISushiswapSpellV1.sol';
-import '../../interfaces/eth/sushiswap/IWMasterChef.sol';
+import '../../contracts/eth/SushiswapSpellV1IntegrationEth.sol';
+import '../../interfaces/sushiswap/ISushiswapFactory.sol';
+import '../../interfaces/homorav2/spells/ISushiswapSpellV1.sol';
+import '../../interfaces/homorav2/wrappers/IWMasterChef.sol';
 
 import 'forge-std/console2.sol';
 
@@ -28,7 +28,7 @@ contract SushiswapSpellV1Test is UtilsETH {
   address tokenB = DAI; // The second token of pool
   uint poolId = 2; // Pool id of MasterChef
 
-  SushiswapSpellV1Integration integration;
+  SushiswapSpellV1IntegrationEth integration;
   address lp;
 
   function setUp() public override {
@@ -37,7 +37,7 @@ contract SushiswapSpellV1Test is UtilsETH {
     vm.label(address(spell), 'spell');
 
     // deploy integration contract
-    integration = new SushiswapSpellV1Integration(bank, factory);
+    integration = new SushiswapSpellV1IntegrationEth(bank, factory);
     lp = factory.getPair(tokenA, tokenB);
 
     // prepare fund for user
@@ -62,7 +62,7 @@ contract SushiswapSpellV1Test is UtilsETH {
 
   function testOpenPosition() internal returns (uint positionId) {
     // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
-    SushiswapSpellV1Integration.AddLiquidityParams memory params = SushiswapSpellV1Integration
+    SushiswapSpellV1IntegrationEth.AddLiquidityParams memory params = SushiswapSpellV1IntegrationEth
       .AddLiquidityParams(
         tokenA,
         tokenB,
@@ -113,7 +113,7 @@ contract SushiswapSpellV1Test is UtilsETH {
     address rewardToken = address(wrapper.sushi());
 
     // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
-    SushiswapSpellV1Integration.AddLiquidityParams memory params = SushiswapSpellV1Integration
+    SushiswapSpellV1IntegrationEth.AddLiquidityParams memory params = SushiswapSpellV1IntegrationEth
       .AddLiquidityParams(
         tokenA,
         tokenB,
@@ -170,8 +170,8 @@ contract SushiswapSpellV1Test is UtilsETH {
     address rewardToken = address(wrapper.sushi());
 
     // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
-    SushiswapSpellV1Integration.RemoveLiquidityParams memory params = SushiswapSpellV1Integration
-      .RemoveLiquidityParams(
+    SushiswapSpellV1IntegrationEth.RemoveLiquidityParams
+      memory params = SushiswapSpellV1IntegrationEth.RemoveLiquidityParams(
         tokenA,
         tokenB,
         collateralAmount,

@@ -7,8 +7,8 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/Sa
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 import './UtilsETH.sol';
-import '../../contracts/eth/curve/CurveSpellV1Integration.sol';
-import '../../interfaces/eth/curve/ICurveSpellV1.sol';
+import '../../contracts/eth/CurveSpellV1IntegrationEth.sol';
+import '../../interfaces/homorav2/spells/ICurveSpellV1.sol';
 
 import 'forge-std/console2.sol';
 
@@ -19,7 +19,7 @@ contract CurveSpellV1Test is UtilsETH {
   ICurveSpellV1 spell = ICurveSpellV1(0x8b947D8448CFFb89EF07A6922b74fBAbac219795);
   address lp = 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490;
   ICurveRegistry registry = ICurveRegistry(0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c);
-  CurveSpellV1Integration integration;
+  CurveSpellV1IntegrationEth integration;
 
   address[] tokens = [DAI, USDC, USDT];
 
@@ -31,7 +31,7 @@ contract CurveSpellV1Test is UtilsETH {
     vm.label(0xf1F32C8EEb06046d3cc3157B8F9f72B09D84ee5b, 'wgauge');
 
     // deploy integration contract
-    integration = new CurveSpellV1Integration(bank, registry, CRV);
+    integration = new CurveSpellV1IntegrationEth(bank, registry, CRV);
 
     // prepare fund for user
     prepareFundV2(alice, tokens, lp, address(integration));
@@ -55,7 +55,7 @@ contract CurveSpellV1Test is UtilsETH {
   }
 
   function testOpenPosition() internal returns (uint positionId) {
-    CurveSpellV1Integration.AddLiquidity3Params memory params;
+    CurveSpellV1IntegrationEth.AddLiquidity3Params memory params;
     params.lp = lp;
     params.amtLPUser = 100;
     params.amtLPBorrow = 0;
@@ -109,7 +109,7 @@ contract CurveSpellV1Test is UtilsETH {
 
     IWLiquidityGauge wrapper = IWLiquidityGauge(collateralTokenAddress);
 
-    CurveSpellV1Integration.AddLiquidity3Params memory params;
+    CurveSpellV1IntegrationEth.AddLiquidity3Params memory params;
     params.lp = lp;
     params.amtLPUser = 100;
     params.amtLPBorrow = 0;
@@ -174,7 +174,7 @@ contract CurveSpellV1Test is UtilsETH {
     // find reward token address
     address rewardToken = address(wrapper.crv());
 
-    CurveSpellV1Integration.RemoveLiquidity3Params memory params;
+    CurveSpellV1IntegrationEth.RemoveLiquidity3Params memory params;
     params.lp = lp;
     params.amtLPTake = collateralAmount; // withdraw 100% of position
     params.amtLPWithdraw = 100; // return only 100 LP to user

@@ -7,12 +7,12 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/Sa
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 import './UtilsFTM.sol';
-import '../../contracts/ftm/beets/BeetsSpellV1Integration.sol';
-import '../../interfaces/ftm/IBankFTM.sol';
-import '../../interfaces/ftm/beets/IBeetsPool.sol';
-import '../../interfaces/ftm/beets/IBeetsVault.sol';
-import '../../interfaces/ftm/beets/IBeetsSpellV1.sol';
-import '../../interfaces/ftm/beets/IWMasterChefBeetsWorker.sol';
+import '../../contracts/ftm/BeetsSpellV1IntegrationFtm.sol';
+import '../../interfaces/homorav2/banks/IBankFTM.sol';
+import '../../interfaces/beets/IBeetsPool.sol';
+import '../../interfaces/beets/IBeetsVault.sol';
+import '../../interfaces/homorav2/spells/IBeetsSpellV1.sol';
+import '../../interfaces/homorav2/wrappers/IWMasterChefBeetsWorker.sol';
 
 import 'forge-std/console2.sol';
 
@@ -27,7 +27,7 @@ contract BeetsSpellV1Test is UtilsFTM {
   uint chefPoolId = 17; // Pool id of Beets MasterChef
   address lp = 0xf3A602d30dcB723A74a0198313a7551FEacA7DAc;
 
-  BeetsSpellV1Integration integration;
+  BeetsSpellV1IntegrationFtm integration;
   address[] tokens;
   bytes32 vaultPoolId; // Pool id of Beets vault
 
@@ -35,7 +35,7 @@ contract BeetsSpellV1Test is UtilsFTM {
     super.setUp();
 
     // deploy integration contract
-    integration = new BeetsSpellV1Integration(bank, vault);
+    integration = new BeetsSpellV1IntegrationFtm(bank, vault);
 
     vm.label(address(spell), 'spell');
     vm.label(address(lp), 'lp');
@@ -67,7 +67,7 @@ contract BeetsSpellV1Test is UtilsFTM {
   }
 
   function testOpenPosition() internal returns (uint positionId) {
-    BeetsSpellV1Integration.AddLiquidityParams memory params;
+    BeetsSpellV1IntegrationFtm.AddLiquidityParams memory params;
     params.vaultPoolId = vaultPoolId;
     params.amtsUser = new uint[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
@@ -122,7 +122,7 @@ contract BeetsSpellV1Test is UtilsFTM {
     // find reward token address
     address rewardToken = address(wrapper.rewardToken());
 
-    BeetsSpellV1Integration.AddLiquidityParams memory params;
+    BeetsSpellV1IntegrationFtm.AddLiquidityParams memory params;
     params.vaultPoolId = vaultPoolId;
     params.amtsUser = new uint[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
@@ -183,7 +183,7 @@ contract BeetsSpellV1Test is UtilsFTM {
     // find reward token address
     address rewardToken = address(wrapper.rewardToken());
 
-    BeetsSpellV1Integration.RemoveLiquidityParams memory params;
+    BeetsSpellV1IntegrationFtm.RemoveLiquidityParams memory params;
     params.vaultPoolId = vaultPoolId;
     params.amtLPTake = collateralAmount; // withdraw 100% of position
     params.amtLPWithdraw = 100; // return only 100 LP to user

@@ -7,11 +7,11 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/Sa
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 import './UtilsAVAX.sol';
-import '../../contracts/avax/pangolin/PangolinSpellV2Integration.sol';
-import '../../interfaces/avax/pangolin/IMiniChefV2PNG.sol';
-import '../../interfaces/avax/pangolin/IWMiniChefV2PNG.sol';
-import '../../interfaces/avax/pangolin/IPangolinSpellV2.sol';
-import '../../interfaces/avax/pangolin/IPangolinFactory.sol';
+import '../../contracts/avax/PangolinSpellV2IntegrationAvax.sol';
+import '../../interfaces/homorav2/wrappers/IWMiniChefV2PNG.sol';
+import '../../interfaces/homorav2/spells/IPangolinSpellV2.sol';
+import '../../interfaces/pangolin/IMiniChefV2PNG.sol';
+import '../../interfaces/pangolin/IPangolinFactory.sol';
 
 import 'forge-std/console2.sol';
 
@@ -29,7 +29,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
   address tokenB = WAVAX; // The second token of pool
   uint poolId = 5; // Pool id of MinichefV2
 
-  PangolinSpellV2Integration integration;
+  PangolinSpellV2IntegrationAvax integration;
   address lp;
 
   function setUp() public override {
@@ -40,7 +40,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
     vm.label(0xa67CF61b0b9BC39c6df04095A118e53BFb9303c7, 'wMinichefPNG');
 
     // deploy integration contract
-    integration = new PangolinSpellV2Integration(bank, factory);
+    integration = new PangolinSpellV2IntegrationAvax(bank, factory);
     lp = factory.getPair(tokenA, tokenB);
 
     // prepare fund for user
@@ -65,7 +65,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
 
   function testOpenPosition() internal returns (uint positionId) {
     // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
-    PangolinSpellV2Integration.AddLiquidityParams memory params = PangolinSpellV2Integration
+    PangolinSpellV2IntegrationAvax.AddLiquidityParams memory params = PangolinSpellV2IntegrationAvax
       .AddLiquidityParams({
         tokenA: tokenA,
         tokenB: tokenB,
@@ -116,7 +116,7 @@ contract PangolinSpellV2Test is UtilsAVAX {
     address rewardToken = address(wrapper.png());
 
     // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
-    PangolinSpellV2Integration.AddLiquidityParams memory params = PangolinSpellV2Integration
+    PangolinSpellV2IntegrationAvax.AddLiquidityParams memory params = PangolinSpellV2IntegrationAvax
       .AddLiquidityParams({
         tokenA: tokenA,
         tokenB: tokenB,
@@ -171,8 +171,8 @@ contract PangolinSpellV2Test is UtilsAVAX {
 
     // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
     // identify type(uint).max if to amtRepay if you want to fully repay the accrued debt.
-    PangolinSpellV2Integration.RemoveLiquidityParams memory params = PangolinSpellV2Integration
-      .RemoveLiquidityParams({
+    PangolinSpellV2IntegrationAvax.RemoveLiquidityParams
+      memory params = PangolinSpellV2IntegrationAvax.RemoveLiquidityParams({
         tokenA: tokenA,
         tokenB: tokenB,
         amtLPTake: collateralAmount,

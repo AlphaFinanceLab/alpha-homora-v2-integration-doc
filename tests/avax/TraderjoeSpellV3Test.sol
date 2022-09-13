@@ -7,11 +7,11 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/utils/Sa
 import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 import './UtilsAVAX.sol';
-import '../../contracts/avax/traderjoe/TraderJoeSpellV3Integration.sol';
-import '../../interfaces/avax/traderjoe/ITraderJoeFactory.sol';
-import '../../interfaces/avax/traderjoe/ITraderJoeSpellV3.sol';
-import '../../interfaces/avax/traderjoe/IBoostedMasterChefJoe.sol';
-import '../../interfaces/avax/traderjoe/IWBoostedMasterChefJoeWorker.sol';
+import '../../contracts/avax/TraderJoeSpellV3IntegrationAvax.sol';
+import '../../interfaces/homorav2/spells/ITraderJoeSpellV3.sol';
+import '../../interfaces/homorav2/wrappers/IWBoostedMasterChefJoeWorker.sol';
+import '../../interfaces/traderjoe/ITraderJoeFactory.sol';
+import '../../interfaces/traderjoe/IBoostedMasterChefJoe.sol';
 
 import 'forge-std/console2.sol';
 
@@ -29,7 +29,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
   address tokenB = USDC; // The second token of pool
   uint poolId = 0; // Pool id of BoostedMasterChefJoe
 
-  TraderJoeSpellV3Integration integration;
+  TraderJoeSpellV3IntegrationAvax integration;
   address lp;
 
   function setUp() public override {
@@ -38,7 +38,7 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
     vm.label(address(spell), 'spell');
 
     // deploy integration contract
-    integration = new TraderJoeSpellV3Integration(bank, factory);
+    integration = new TraderJoeSpellV3IntegrationAvax(bank, factory);
     lp = factory.getPair(tokenA, tokenB);
 
     // prepare fund for user
@@ -63,8 +63,8 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
 
   function testOpenPosition() internal returns (uint positionId) {
     // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
-    TraderJoeSpellV3Integration.AddLiquidityParams memory params = TraderJoeSpellV3Integration
-      .AddLiquidityParams(
+    TraderJoeSpellV3IntegrationAvax.AddLiquidityParams
+      memory params = TraderJoeSpellV3IntegrationAvax.AddLiquidityParams(
         tokenA,
         tokenB,
         10**IERC20Metadata(tokenA).decimals(),
@@ -114,8 +114,8 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
     address rewardToken = address(wrapper.joe());
 
     // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
-    TraderJoeSpellV3Integration.AddLiquidityParams memory params = TraderJoeSpellV3Integration
-      .AddLiquidityParams(
+    TraderJoeSpellV3IntegrationAvax.AddLiquidityParams
+      memory params = TraderJoeSpellV3IntegrationAvax.AddLiquidityParams(
         tokenA,
         tokenB,
         10**IERC20Metadata(tokenA).decimals(),
@@ -167,8 +167,8 @@ contract TraderJoeSpellV3Test is UtilsAVAX {
     address rewardToken = address(wrapper.joe());
 
     // for actual run, please put amtAMin, amtBMin (slippage), or else you get attacked.
-    TraderJoeSpellV3Integration.RemoveLiquidityParams memory params = TraderJoeSpellV3Integration
-      .RemoveLiquidityParams(
+    TraderJoeSpellV3IntegrationAvax.RemoveLiquidityParams
+      memory params = TraderJoeSpellV3IntegrationAvax.RemoveLiquidityParams(
         tokenA,
         tokenB,
         collateralAmount,
