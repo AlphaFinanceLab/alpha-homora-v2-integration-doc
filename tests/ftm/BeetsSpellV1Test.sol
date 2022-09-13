@@ -8,11 +8,11 @@ import 'OpenZeppelin/openzeppelin-contracts@4.7.3/contracts/token/ERC20/extensio
 
 import './UtilsFTM.sol';
 import '../../contracts/ftm/beets/BeetsSpellV1Integration.sol';
-import '../../../../interfaces/ftm/IBankFTM.sol';
-import '../../../../interfaces/ftm/beets/IBeetsPool.sol';
-import '../../../../interfaces/ftm/beets/IBeetsVault.sol';
-import '../../../../interfaces/ftm/beets/IBeetsSpellV1.sol';
-import '../../../../interfaces/ftm/beets/IWMasterChefBeetsWorker.sol';
+import '../../interfaces/ftm/IBankFTM.sol';
+import '../../interfaces/ftm/beets/IBeetsPool.sol';
+import '../../interfaces/ftm/beets/IBeetsVault.sol';
+import '../../interfaces/ftm/beets/IBeetsSpellV1.sol';
+import '../../interfaces/ftm/beets/IWMasterChefBeetsWorker.sol';
 
 import 'forge-std/console2.sol';
 
@@ -21,19 +21,15 @@ contract BeetsSpellV1Test is UtilsFTM {
 
   IBankFTM bank = IBankFTM(bankAddress);
 
-  // TODO: change spell address you want
+  // TODO: change spell address, vault, poolId, lp token you want
   IBeetsSpellV1 spell = IBeetsSpellV1(0xEeb9b7C60749fEC168ABE7382981428D6ac00C2F); // spell to interact with
-  // TODO: change vault you want
   IBeetsVault vault = IBeetsVault(0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce); // beets vault
-
-  // TODO: change masterchef pool id you want
-  uint masterChefPoolId = 17; // Pool id of Beets MasterChef
-  // TODO: change lp you want
+  uint chefPoolId = 17; // Pool id of Beets MasterChef
   address lp = 0xf3A602d30dcB723A74a0198313a7551FEacA7DAc;
 
   BeetsSpellV1Integration integration;
   address[] tokens;
-  bytes32 poolId; // Pool id of Beets vault
+  bytes32 vaultPoolId; // Pool id of Beets vault
 
   function setUp() public override {
     super.setUp();
@@ -46,8 +42,8 @@ contract BeetsSpellV1Test is UtilsFTM {
     vm.label(address(integration), 'integration');
 
     IBeetsPool pool = IBeetsPool(lp);
-    poolId = pool.getPoolId();
-    (tokens, , ) = vault.getPoolTokens(poolId);
+    vaultPoolId = pool.getPoolId();
+    (tokens, , ) = vault.getPoolTokens(vaultPoolId);
 
     // prepare fund for user
     prepareFundV2(alice, tokens, lp, address(integration));
@@ -71,20 +67,20 @@ contract BeetsSpellV1Test is UtilsFTM {
   }
 
   function testOpenPosition() internal returns (uint positionId) {
-    uint[] memory amtsUser = new uint[](tokens.length);
+    BeetsSpellV1Integration.AddLiquidityParams memory params;
+    params.vaultPoolId = vaultPoolId;
+    params.amtsUser = new uint[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
-      amtsUser[i] = (10 * 10**IERC20Metadata(tokens[i]).decimals());
+      params.amtsUser[i] = (10 * 10**IERC20Metadata(tokens[i]).decimals());
     }
-
-    uint amtLPUser = 100;
-
-    uint[] memory amtsBorrow = new uint[](tokens.length);
+    params.amtsBorrow = new uint[](tokens.length);
+    params.amtLPUser = 100;
     for (uint i = 0; i < tokens.length; i++) {
-      amtsBorrow[i] = amtsUser[i];
+      params.amtsBorrow[i] = params.amtsUser[i];
     }
-
-    uint amtLPBorrow = 0;
-    uint minLPMint = 0;
+    params.amtLPBorrow = 0;
+    params.minLPMint = 0; // for actual run, please put minLPMint (slippage), or else you get attacked.
+    params.chefPoolId = chefPoolId;
 
     // user info before
     uint[] memory userBalanceTokens_before = new uint[](tokens.length);
@@ -93,23 +89,9 @@ contract BeetsSpellV1Test is UtilsFTM {
     }
     uint userBalanceLP_before = balanceOf(lp, alice);
 
-    // assume that user wants to open position by calling to integration contract
-    // so integration contract will forward a request to HomoraBank further
-
     // call contract
     vm.startPrank(alice);
-    positionId = integration.openPosition(
-      address(spell),
-      BeetsSpellV1Integration.AddLiquidityParams(
-        poolId,
-        amtsUser,
-        amtLPUser,
-        amtsBorrow,
-        amtLPBorrow,
-        minLPMint,
-        masterChefPoolId
-      )
-    );
+    positionId = integration.openPosition(spell, params);
     vm.stopPrank();
 
     // user info after
@@ -140,20 +122,20 @@ contract BeetsSpellV1Test is UtilsFTM {
     // find reward token address
     address rewardToken = address(wrapper.rewardToken());
 
-    uint[] memory amtsUser = new uint[](tokens.length);
+    BeetsSpellV1Integration.AddLiquidityParams memory params;
+    params.vaultPoolId = vaultPoolId;
+    params.amtsUser = new uint[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
-      amtsUser[i] = 1 * 10**IERC20Metadata(tokens[i]).decimals();
+      params.amtsUser[i] = (10 * 10**IERC20Metadata(tokens[i]).decimals());
     }
-
-    uint amtLPUser = 100;
-
-    uint[] memory amtsBorrow = new uint[](tokens.length);
+    params.amtsBorrow = new uint[](tokens.length);
+    params.amtLPUser = 100;
     for (uint i = 0; i < tokens.length; i++) {
-      amtsBorrow[i] = amtsUser[i];
+      params.amtsBorrow[i] = params.amtsUser[i];
     }
-
-    uint amtLPBorrow = 0;
-    uint minLPMint = 0;
+    params.amtLPBorrow = 0;
+    params.minLPMint = 0; // for actual run, please put minLPMint (slippage), or else you get attacked.
+    params.chefPoolId = chefPoolId;
 
     // user info before
     uint[] memory userBalanceTokens_before = new uint[](tokens.length);
@@ -165,19 +147,7 @@ contract BeetsSpellV1Test is UtilsFTM {
 
     // call contract
     vm.startPrank(alice);
-    integration.increasePosition(
-      _positionId,
-      address(spell),
-      BeetsSpellV1Integration.AddLiquidityParams(
-        poolId,
-        amtsUser,
-        amtLPUser,
-        amtsBorrow,
-        amtLPBorrow,
-        minLPMint,
-        masterChefPoolId
-      )
-    );
+    integration.increasePosition(_positionId, spell, params);
     vm.stopPrank();
 
     // user info after
@@ -213,19 +183,21 @@ contract BeetsSpellV1Test is UtilsFTM {
     // find reward token address
     address rewardToken = address(wrapper.rewardToken());
 
-    uint amtLPTake = collateralAmount; // withdraw 100% of position
-    uint amtLPWithdraw = 100; // return only 100 LP to user
+    BeetsSpellV1Integration.RemoveLiquidityParams memory params;
+    params.vaultPoolId = vaultPoolId;
+    params.amtLPTake = collateralAmount; // withdraw 100% of position
+    params.amtLPWithdraw = 100; // return only 100 LP to user
 
-    uint[] memory amtsRepay = new uint[](tokens.length);
+    params.amtsRepay = new uint[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
-      amtsRepay[i] = type(uint).max; // repay 100% of tokenB
+      params.amtsRepay[i] = type(uint).max; // repay 100% of tokenB
     }
+    params.amtLPRepay = 0; // (always 0 since LP borrow is disallowed)
 
-    uint amtLPRepay = 0; // (always 0 since LP borrow is disallowed)
-
-    uint[] memory amtsMin = new uint[](tokens.length);
+    // for actual run, please put amtsMin[i] (slippage), or else you get attacked.
+    params.amtsMin = new uint[](tokens.length);
     for (uint i = 0; i < tokens.length; i++) {
-      amtsMin[i] = 0; // amount of token that user expects after withdrawal
+      params.amtsMin[i] = 0;
     }
 
     // user info before
@@ -238,18 +210,7 @@ contract BeetsSpellV1Test is UtilsFTM {
 
     // call contract
     vm.startPrank(alice);
-    integration.reducePosition(
-      address(spell),
-      _positionId,
-      BeetsSpellV1Integration.RemoveLiquidityParams(
-        poolId,
-        amtLPTake,
-        amtLPWithdraw,
-        amtsRepay,
-        amtLPRepay,
-        amtsMin
-      )
-    );
+    integration.reducePosition(_positionId, spell, params);
     vm.stopPrank();
 
     // user info after
@@ -267,7 +228,7 @@ contract BeetsSpellV1Test is UtilsFTM {
       );
     }
     require(
-      userBalanceLP_after - userBalanceLP_before == amtLPWithdraw,
+      userBalanceLP_after - userBalanceLP_before == params.amtLPWithdraw,
       'incorrect user balance of LP'
     );
     require(
@@ -293,7 +254,7 @@ contract BeetsSpellV1Test is UtilsFTM {
 
     // call contract
     vm.startPrank(alice);
-    integration.harvestRewards(address(spell), _positionId);
+    integration.harvestRewards(_positionId, spell);
     vm.stopPrank();
 
     // user info after
@@ -326,7 +287,7 @@ contract BeetsSpellV1Test is UtilsFTM {
 
     // call contract
     vm.startPrank(alice);
-    integration.harvestRewards(address(spell), _positionId);
+    integration.harvestRewards(_positionId, spell);
     vm.stopPrank();
 
     // user info after

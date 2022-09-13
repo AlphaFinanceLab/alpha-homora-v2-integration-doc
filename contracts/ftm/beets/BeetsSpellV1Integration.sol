@@ -22,35 +22,25 @@ contract BeetsSpellV1Integration is BaseIntegration {
 
   IBankFTM bank; // homora bank
   IBeetsVault vault; // beets vault
-
-  // addLiquidityWMasterChef(bytes32,(uint256[],uint256,uint256[],uint256,uint256),uint256)
-  bytes4 addLiquiditySelector = 0xa3be0614;
-
-  // removeLiquidityWMasterChef(bytes32,(uint256,uint256,uint256[],uint256,uint256[]))
-  bytes4 removeLiquiditySelector = 0x25c556b2;
-
-  // harvestWMasterChef()
-  bytes4 harvestRewardsSelector = 0x40a65ad2;
-
   uint constant PRECISION = 10**18;
 
   struct AddLiquidityParams {
-    bytes32 poolId; // poolId in Vault
+    bytes32 vaultPoolId; // poolId in Vault
     uint[] amtsUser; // Supplied tokens amount
     uint amtLPUser; // Supplied LP token amount
     uint[] amtsBorrow; // Borrow tokens amount
     uint amtLPBorrow; // Borrow LP token amount
     uint minLPMint; // Desired LP token amount (slippage control)
-    uint pid; // pool id of BoostedMasterChefReward
+    uint chefPoolId; // pool id of BoostedMasterChefReward
   }
 
   struct RemoveLiquidityParams {
-    bytes32 poolId; // poolId in Vault
+    bytes32 vaultPoolId; // poolId in Vault
     uint amtLPTake; // Amount of LP being removed from the position
-    uint amtLPWithdraw; // Amount of LP being received from removing the position (remaining will be converted to each tokens)
-    uint[] amtsRepay; // Repay tokens amount (repay all -> type(uint).max)
-    uint amtLPRepay; // Repay LP token amount
-    uint[] amtsMin; // Desired tokens amount
+    uint amtLPWithdraw; // Amount of LP that user receives (remainings are converted to underlying tokens).
+    uint[] amtsRepay; // Amount of tokens that user repays (repay all -> type(uint).max)
+    uint amtLPRepay; // Amount of LP that user repays (should be 0, not support borrowing LP tokens).
+    uint[] amtsMin; // Desired tokens amount (slippage control)
   }
 
   constructor(IBankFTM _bank, IBeetsVault _factory) {
@@ -58,11 +48,11 @@ contract BeetsSpellV1Integration is BaseIntegration {
     vault = _factory;
   }
 
-  function openPosition(address _spell, AddLiquidityParams memory _params)
+  function openPosition(IBeetsSpellV1 _spell, AddLiquidityParams memory _params)
     external
     returns (uint positionId)
   {
-    (address[] memory tokens, address lp) = getPoolTokensAndLp(_params.poolId);
+    (address[] memory tokens, address lp) = getPoolTokensAndLp(_params.vaultPoolId);
 
     // approve tokens
     for (uint i = 0; i < tokens.length; i++) {
@@ -76,22 +66,20 @@ contract BeetsSpellV1Integration is BaseIntegration {
     }
     IERC20(lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
 
-    positionId = bank.execute(
-      0, // (0 is reserved for opening new position)
-      _spell,
-      abi.encodeWithSelector(
-        addLiquiditySelector,
-        _params.poolId,
-        IBeetsSpellV1.Amounts(
-          _params.amtsUser,
-          _params.amtLPUser,
-          _params.amtsBorrow,
-          _params.amtLPBorrow,
-          _params.minLPMint
-        ),
-        _params.pid
-      )
+    bytes memory executeData = abi.encodeWithSelector(
+      _spell.addLiquidityWMasterChef.selector,
+      _params.vaultPoolId,
+      IBeetsSpellV1.Amounts(
+        _params.amtsUser,
+        _params.amtLPUser,
+        _params.amtsBorrow,
+        _params.amtLPBorrow,
+        _params.minLPMint
+      ),
+      _params.chefPoolId
     );
+    // (0 is reserved for opening new position)
+    positionId = bank.execute(0, address(_spell), executeData);
 
     doRefundETH();
     for (uint i = 0; i < tokens.length; i++) {
@@ -102,10 +90,10 @@ contract BeetsSpellV1Integration is BaseIntegration {
 
   function increasePosition(
     uint _positionId,
-    address _spell,
+    IBeetsSpellV1 _spell,
     AddLiquidityParams memory _params
   ) external {
-    (address[] memory tokens, address lp) = getPoolTokensAndLp(_params.poolId);
+    (address[] memory tokens, address lp) = getPoolTokensAndLp(_params.vaultPoolId);
     address rewardToken = getRewardToken(_positionId);
 
     // approve tokens
@@ -120,22 +108,19 @@ contract BeetsSpellV1Integration is BaseIntegration {
     }
     IERC20(lp).safeTransferFrom(msg.sender, address(this), _params.amtLPUser);
 
-    bank.execute(
-      _positionId,
-      _spell,
-      abi.encodeWithSelector(
-        addLiquiditySelector,
-        _params.poolId,
-        IBeetsSpellV1.Amounts(
-          _params.amtsUser,
-          _params.amtLPUser,
-          _params.amtsBorrow,
-          _params.amtLPBorrow,
-          _params.minLPMint
-        ),
-        _params.pid
-      )
+    bytes memory executeData = abi.encodeWithSelector(
+      _spell.addLiquidityWMasterChef.selector,
+      _params.vaultPoolId,
+      IBeetsSpellV1.Amounts(
+        _params.amtsUser,
+        _params.amtLPUser,
+        _params.amtsBorrow,
+        _params.amtLPBorrow,
+        _params.minLPMint
+      ),
+      _params.chefPoolId
     );
+    bank.execute(_positionId, address(_spell), executeData);
 
     doRefundETH();
     for (uint i = 0; i < tokens.length; i++) {
@@ -146,28 +131,25 @@ contract BeetsSpellV1Integration is BaseIntegration {
   }
 
   function reducePosition(
-    address _spell,
     uint _positionId,
+    IBeetsSpellV1 _spell,
     RemoveLiquidityParams memory _params
   ) external {
-    (address[] memory tokens, address lp) = getPoolTokensAndLp(_params.poolId);
+    (address[] memory tokens, address lp) = getPoolTokensAndLp(_params.vaultPoolId);
     address rewardToken = getRewardToken(_positionId);
 
-    bank.execute(
-      _positionId,
-      _spell,
-      abi.encodeWithSelector(
-        removeLiquiditySelector,
-        _params.poolId,
-        IBeetsSpellV1.RepayAmounts(
-          _params.amtLPTake,
-          _params.amtLPWithdraw,
-          _params.amtsRepay,
-          _params.amtLPRepay,
-          _params.amtsMin
-        )
+    bytes memory executeData = abi.encodeWithSelector(
+      _spell.removeLiquidityWMasterChef.selector,
+      _params.vaultPoolId,
+      IBeetsSpellV1.RepayAmounts(
+        _params.amtLPTake,
+        _params.amtLPWithdraw,
+        _params.amtsRepay,
+        _params.amtLPRepay,
+        _params.amtsMin
       )
     );
+    bank.execute(_positionId, address(_spell), executeData);
 
     doRefundETH();
     for (uint i = 0; i < tokens.length; i++) {
@@ -177,8 +159,9 @@ contract BeetsSpellV1Integration is BaseIntegration {
     doRefund(rewardToken);
   }
 
-  function harvestRewards(address _spell, uint _positionId) external {
-    bank.execute(_positionId, _spell, abi.encodeWithSelector(harvestRewardsSelector));
+  function harvestRewards(uint _positionId, IBeetsSpellV1 _spell) external {
+    bytes memory executeData = abi.encodeWithSelector(_spell.harvestWMasterChef.selector);
+    bank.execute(_positionId, address(_spell), executeData);
 
     address rewardToken = getRewardToken(_positionId);
 
@@ -194,14 +177,14 @@ contract BeetsSpellV1Integration is BaseIntegration {
     IMasterChefBeets chef = IMasterChefBeets(wrapper.chef());
 
     // get info for calculating rewards
-    (uint pid, uint startRewardTokenPerShare) = wrapper.decodeId(collateralId);
+    (uint chefPoolId, uint startRewardTokenPerShare) = wrapper.decodeId(collateralId);
     uint endRewardTokenPerShare = wrapper.accRewardPerShare();
-    (uint totalSupply, ) = chef.userInfo(pid, address(wrapper)); // total lp from wrapper deposited in Chef
+    (uint totalSupply, ) = chef.userInfo(chefPoolId, address(wrapper)); // total lp from wrapper deposited in Chef
 
     // pending rewards separates into two parts
     // 1. pending rewards that are in the wrapper contract
     // 2. pending rewards that wrapper hasn't claimed from Chef's contract
-    uint pendingRewardFromChef = chef.pendingBeets(pid, address(wrapper));
+    uint pendingRewardFromChef = chef.pendingBeets(chefPoolId, address(wrapper));
     endRewardTokenPerShare += (pendingRewardFromChef * PRECISION) / totalSupply;
 
     uint stReward = (startRewardTokenPerShare * collateralAmount).divCeil(PRECISION);
@@ -210,13 +193,13 @@ contract BeetsSpellV1Integration is BaseIntegration {
     pendingRewards = (enReward > stReward) ? enReward - stReward : 0;
   }
 
-  function getPoolTokensAndLp(bytes32 _poolId)
+  function getPoolTokensAndLp(bytes32 _vaultPoolId)
     internal
     view
     returns (address[] memory tokens, address lp)
   {
-    (lp, ) = vault.getPool(_poolId);
-    (tokens, , ) = vault.getPoolTokens(_poolId);
+    (lp, ) = vault.getPool(_vaultPoolId);
+    (tokens, , ) = vault.getPoolTokens(_vaultPoolId);
   }
 
   function getRewardToken(uint _positionId) internal view returns (address rewardToken) {
