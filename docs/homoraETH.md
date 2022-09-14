@@ -143,3 +143,18 @@ Following table describes what wrapper contract types use which spell contracts.
 | every pool in Sushiswap<br> (no reward) | WERC20            | SushiswapSpellV1 |
 | every pool in Sushiswap                 | WMasterChef       | SushiswapSpellV1 |
 | every pools in Curve                    | WLiquidityGauge   | CurveSpellV1     |
+
+## How to run tests
+
+- make sure you have installed [Foundry](https://book.getfoundry.sh/getting-started/installation)
+- compile project
+
+```sh
+forge build
+```
+
+- run tests
+
+```sh
+forge test --contracts tests/eth -vv --fork-url <ETH_RPC_URL> --via-ir
+```

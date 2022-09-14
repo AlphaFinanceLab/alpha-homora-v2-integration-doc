@@ -132,3 +132,18 @@ Following table describes what wrapper contract types use which spell contracts.
 | Pool type                               | Wrapper contracts  | Spell contracts |
 | --------------------------------------- | ------------------ | --------------- |
 | every pool in UniswapV3<br> (no reward) | WUniswapV3Position | UniswapV3Spell  |
+
+## How to run tests
+
+- make sure you have installed [Foundry](https://book.getfoundry.sh/getting-started/installation)
+- compile project
+
+```sh
+forge build
+```
+
+- run tests
+
+```sh
+forge test --contracts tests/op -vv --fork-url <OP_RPC_URL> --via-ir
+```

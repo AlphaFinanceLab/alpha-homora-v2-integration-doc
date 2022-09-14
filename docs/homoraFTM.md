@@ -156,3 +156,18 @@ Following table describes what wrapper contract types use which spell contracts.
 | WMasterChefSpiritV1                       | [0xba514D50C4Abb55a632999F14F71F9a189B22C7d](https://ftmscan.com/address/0xba514D50C4Abb55a632999F14F71F9a189B22C7d) |
 | WMasterChefBeetsWorker (USDC/FTM)         | [0x8fD641A26c373f0B9BaAFe5aEaFCC977458b6153](https://ftmscan.com/address/0x8fD641A26c373f0B9BaAFe5aEaFCC977458b6153) |
 | WMasterChefBeetsWorker (USDC/FTM/BTC/ETH) | [0xEd0dCeC4d50B6374971AD7c7180f80775eAFf1eF](https://ftmscan.com/address/0xEd0dCeC4d50B6374971AD7c7180f80775eAFf1eF) |
+
+## How to run tests
+
+- make sure you have installed [Foundry](https://book.getfoundry.sh/getting-started/installation)
+- compile project
+
+```sh
+forge build
+```
+
+- run tests
+
+```sh
+forge test --contracts tests/ftm -vv --fork-url <FTM_RPC_URL> --via-ir
+```

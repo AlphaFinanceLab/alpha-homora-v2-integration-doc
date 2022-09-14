@@ -168,3 +168,18 @@ Following table describes what wrapper contract types use which spell contracts.
 | TraderJoe pools:<br>ALPHA.e-WAVAX                                                                                                                 | WMasterchefJoeV3        | TraderJoeSpellV2 |
 | TraderJoe pools:<br>WAVAX-USDC,<br>WETH.e-WAVAX,<br>USDT.e-WAVAX,<br>USDC.e-WAVAX,<br>MIM-WAVAX,<br>WBTC.e-WAVAX,<br>USDC-USDC.e,<br>LINK.e-WAVAX | WBoostedMasterchefJoeV3 | TraderJoeSpellV3 |
 | every pool in <br>Pangolin Exchange                                                                                                               | WMiniChefV2PNG          | PangolinSpellV2  |
+
+## How to run tests
+
+- make sure you have installed [Foundry](https://book.getfoundry.sh/getting-started/installation)
+- compile project
+
+```sh
+forge build
+```
+
+- run tests
+
+```sh
+forge test --contracts tests/avax -vv --fork-url <AVAX_RPC_URL> --via-ir
+```
