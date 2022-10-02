@@ -28,7 +28,8 @@ contract UtilsETH is Utils {
   function setUp() public virtual {
     vm.label(bankAddress, 'bankAddress');
 
-    vm.label(CRV, 'WETH');
+    vm.label(WETH, 'WETH');
+    vm.label(USDC, 'USDC');
     vm.label(CRV, 'CRV');
   }
 
@@ -61,6 +62,25 @@ contract UtilsETH is Utils {
     // NOTE: only ALPHA executive can set allow contract call
     vm.prank(_bank.exec());
     _bank.setAllowContractCalls(true);
+  }
+
+  function setWhitelistContractWithTxOrigin(
+    IBankETH _bank,
+    address _origin,
+    address _contract
+  ) internal {
+    // set whitelist contract call from tx origin
+    address[] memory _contracts = new address[](1);
+    address[] memory _origins = new address[](1);
+    bool[] memory _statuses = new bool[](1);
+
+    _contracts[0] = _contract;
+    _origins[0] = _origin;
+    _statuses[0] = true;
+
+    // NOTE: only ALPHA governor can set whitelist contract call
+    vm.prank(_bank.governor());
+    _bank.setWhitelistContractWithTxOrigin(_contracts, _origins, _statuses);
   }
 
   function setCreditLimit(

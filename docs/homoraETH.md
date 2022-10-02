@@ -119,6 +119,106 @@ IWLiquidityGauge wrapper = IWLiquidityGauge(collateralTokenAddress);
 );
 ```
 
+### Uniswap V3
+
+Spell Address: See Appendix A
+
+Example of how to integrate with Homora [here](../contracts/eth/UniswapV3SpellIntegrationETH.sol)
+
+Functions:
+
+1. openPosition: Open a new position and provide liquidity to the pool.
+2. increasePosition: Increase position and provide liquidity to the pool.
+3. removeLiquidity: Remove liquidity from the pool and repay a loan.
+4. harvest: Collect fee from the position.
+5. closePosition: Close the position (collect Fee, remove all liquidity, and repay).
+6. reinvest: Collect fee and increase liquidity into the position.
+
+Decoding wrapper token ID
+|parameters|description|
+|---|---|
+|posInfo|uniswapV3 position info|
+
+```solidity=
+bank = HomoraBank.at(0xba5eBAf3fc1Fcca67147050Bf80462393814E54B);
+uint256 positionId = 1234; // change position id here
+
+// query position info from position id
+(, collateralTokenAddress, collateralTokenId, collateralAmount) = bank.getPositionInfo(
+_positionId
+);
+
+IWUniswapV3Position wrapper = IWUniswapV3Position(collateralTokenAddress);
+
+(, , , , , , , , feeGrowthInside0LastX128, feeGrowthInside1LastX128, , ) = npm.positions(
+collateralTokenId
+);
+
+posInfo = wrapper.getPositionInfoFromTokenId(collateralTokenId);
+```
+
+Since leverage yield farming on UniswapV3 requires optimal swap input from OptimalSwap contract so we provide an example of how to open a new position on HomoraBank [here](https://github.com/AlphaFinanceLab/alpha-homora-v2-integration-doc/blob/master/tests/op/UniswapV3SpellTest.sol#L286-L342)
+
+```solidity=
+function testOpenPositionWithOptimalSwap() internal {
+    uint multiplier0 = 100;
+    uint multiplier1 = 100;
+    (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
+    int24 currentTick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+    uint absTick = currentTick < 0 ? uint(-int(currentTick)) : uint(int(currentTick));
+    absTick -= absTick % tickSpacing;
+    currentTick = currentTick < 0 ? -int24(int(absTick)) : int24(int(absTick));
+    int24 tickLower = int24(currentTick - int24(int(multiplier0 * tickSpacing)));
+    int24 tickUpper = int24(currentTick + int24(int(multiplier1 * tickSpacing)));
+    uint amt0User = 10 * 10**IERC20Metadata(token0).decimals();
+    uint amt1User = 10 * 10**IERC20Metadata(token1).decimals();
+    uint amt0Borrow = amt0User / 10;
+    uint amt1Borrow = amt1User / 10;
+    (uint amtSwap, uint amtOut, bool isZeroForOne) = optimalSwap.getOptimalSwapAmt(
+      IUniswapV3Pool(pool),
+      amt0User + amt0Borrow,
+      amt1User + amt1Borrow,
+      tickLower,
+      tickUpper
+    );
+
+    // user info before
+    uint userBalanceToken0_before = balanceOf(token0, alice);
+    uint userBalanceToken1_before = balanceOf(token1, alice);
+
+    // call contract
+    vm.startPrank(alice, alice);
+    integration.openPosition(
+      address(spell),
+      IUniswapV3Spell.OpenPositionParams(
+        token0,
+        token1,
+        fee,
+        tickLower,
+        tickUpper,
+        amt0User,
+        amt1User,
+        amt0Borrow,
+        amt1Borrow,
+        0,
+        0,
+        amtSwap,
+        amtOut,
+        isZeroForOne,
+        type(uint).max
+      )
+    );
+    vm.stopPrank();
+
+    // user info after
+    uint userBalanceToken0_after = balanceOf(token0, alice);
+    uint userBalanceToken1_after = balanceOf(token1, alice);
+
+    require(userBalanceToken0_before > userBalanceToken0_after, 'incorrect user balance of token0');
+    require(userBalanceToken1_before > userBalanceToken1_after, 'incorrect user balance of token1');
+}
+```
+
 ## Appendix A: Contract addresses
 
 | Name                    | Contract address                                                                                                      |
@@ -143,18 +243,3 @@ Following table describes what wrapper contract types use which spell contracts.
 | every pool in Sushiswap<br> (no reward) | WERC20            | SushiswapSpellV1 |
 | every pool in Sushiswap                 | WMasterChef       | SushiswapSpellV1 |
 | every pools in Curve                    | WLiquidityGauge   | CurveSpellV1     |
-
-## How to run tests
-
-- make sure you have installed [Foundry](https://book.getfoundry.sh/getting-started/installation)
-- compile project
-
-```sh
-forge build
-```
-
-- run tests
-
-```sh
-forge test --contracts tests/eth -vv --fork-url <ETH_RPC_URL> --via-ir
-```
