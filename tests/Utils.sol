@@ -40,6 +40,12 @@ contract Utils is Test {
     vm.stopPrank();
   }
 
+  function drainETH(address _user) internal {
+    vm.startPrank(_user, _user);
+    payable(address(0)).transfer(_user.balance);
+    vm.stopPrank();
+  }
+
   function prepareTokens(
     address _user,
     address _tokenA,
