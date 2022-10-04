@@ -227,19 +227,22 @@ function testOpenPositionWithOptimalSwap() internal {
 | UniswapV2SpellV1        | [0x00b1a4E7F217380a7C9e6c12F327AC4a1D9B6A14](https://etherscan.io/address/0x00b1a4E7F217380a7C9e6c12F327AC4a1D9B6A14) |
 | SushiswapSpellV1        | [0xDc9c7A2Bae15dD89271ae5701a6f4DB147BAa44C](https://etherscan.io/address/0xDc9c7A2Bae15dD89271ae5701a6f4DB147BAa44C) |
 | CurveSpellV1            | [0x8b947D8448CFFb89EF07A6922b74fBAbac219795](https://etherscan.io/address/0x8b947D8448CFFb89EF07A6922b74fBAbac219795) |
+| UniswapV3Spell          | [0x0B8F60Be035cc5B1982ED2145c6BFC05F863ddc1](https://etherscan.io/address/0x0B8F60Be035cc5B1982ED2145c6BFC05F863ddc1) |
 | WERC20                  | [0x06799a1e4792001AA9114F0012b9650cA28059a3](https://etherscan.io/address/0x06799a1e4792001AA9114F0012b9650cA28059a3) |
 | WStakingRewards (INDEX) | [0x011535FD795fD28c749363E080662D62fBB456a7](https://etherscan.io/address/0x011535FD795fD28c749363E080662D62fBB456a7) |
 | WMasterChef             | [0xA2caEa05fF7B98f10Ad5ddc837F15905f33FEb60](https://etherscan.io/address/0xA2caEa05fF7B98f10Ad5ddc837F15905f33FEb60) |
 | WLiquidityGauge         | [0xf1F32C8EEb06046d3cc3157B8F9f72B09D84ee5b](https://etherscan.io/address/0xf1F32C8EEb06046d3cc3157B8F9f72B09D84ee5b) |
+| WUniswapV3Position      | [0x4fb70edDA7f67BdBE225df7C91483c45699293f5](https://etherscan.io/address/0x4fb70edDA7f67BdBE225df7C91483c45699293f5) |
 
 Many wrapper contracts are implemented to support different pools' reward contract. Even the pools are in the same DEX, the reward contract may be different, e.g. Masterchef contract, Minichef contract),
 
 Following table describes what wrapper contract types use which spell contracts.
 
-| Pool type                               | Wrapper contracts | Spell contracts  |
-| --------------------------------------- | ----------------- | ---------------- |
-| every pool in UniswapV2<br> (no reward) | WERC20            | UniswapSpellV1   |
-| every pool in UniswapV2<br> (INDEX)     | WStakingRewards   | UniswapSpellV1   |
-| every pool in Sushiswap<br> (no reward) | WERC20            | SushiswapSpellV1 |
-| every pool in Sushiswap                 | WMasterChef       | SushiswapSpellV1 |
-| every pools in Curve                    | WLiquidityGauge   | CurveSpellV1     |
+| Pool type                               | Wrapper contracts  | Spell contracts  |
+| --------------------------------------- | ------------------ | ---------------- |
+| every pool in UniswapV2<br> (no reward) | WERC20             | UniswapSpellV1   |
+| every pool in UniswapV2<br> (INDEX)     | WStakingRewards    | UniswapSpellV1   |
+| every pool in Sushiswap<br> (no reward) | WERC20             | SushiswapSpellV1 |
+| every pool in Sushiswap                 | WMasterChef        | SushiswapSpellV1 |
+| every pools in Curve                    | WLiquidityGauge    | CurveSpellV1     |
+| every pools in UniswapV3                | WUniswapV3Position | UniswapV3Spell   |
