@@ -20,7 +20,7 @@ contract SushiswapSpellV1Test is UtilsETH {
   IBankETH bank = IBankETH(bankAddress);
 
   // TODO: change spell address you want
-  ISushiswapSpellV1 spell = ISushiswapSpellV1(0xDc9c7A2Bae15dD89271ae5701a6f4DB147BAa44C); // spell to interact with
+  ISushiswapSpellV1 spell = ISushiswapSpellV1(0xDf00594a2456c38af24A2600115999bCf096994F); // spell to interact with
   ISushiswapFactory factory = ISushiswapFactory(0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac); // sushiswap factory
 
   // TODO: change tokenA, tokenB, poolID you want
@@ -57,6 +57,7 @@ contract SushiswapSpellV1Test is UtilsETH {
     testIncreasePosition(positionId);
     testGetPendingRewards(positionId);
     testHarvestRewards(positionId);
+    testRepayPositionDebt(positionId);
     testReducePosition(positionId);
   }
 
@@ -210,6 +211,59 @@ contract SushiswapSpellV1Test is UtilsETH {
       userBalanceReward_after > userBalanceReward_before,
       'incorrect user balance of reward token'
     );
+  }
+
+  function testRepayPositionDebt(uint _positionId) internal {
+    // increase block number to calculate more rewards
+    vm.roll(block.number + 10000);
+
+    // get collateral information from position id
+    (, address collateralTokenAddress, , uint collateralAmount) = bank.getPositionInfo(_positionId);
+
+    IWMasterChef wrapper = IWMasterChef(collateralTokenAddress);
+
+    // find reward token address
+    address rewardToken = address(wrapper.sushi());
+
+    // for actual run, please put amtRepayMin (slippage), or else you get attacked.
+    SushiswapSpellV1IntegrationEth.repayDebtParams memory params = SushiswapSpellV1IntegrationEth
+      .repayDebtParams(tokenA, tokenB, true, collateralAmount / 4, 0);
+
+    // user info before
+    uint userBalanceTokenA_before = balanceOf(tokenA, alice);
+    uint userBalanceTokenB_before = balanceOf(tokenB, alice);
+    uint userBalanceLP_before = balanceOf(lp, alice);
+    uint userBalanceReward_before = balanceOf(rewardToken, alice);
+    uint positionDebt_before = bank.getBorrowETHValue(_positionId);
+
+    // call contract
+    vm.startPrank(alice);
+    integration.repayPositionDebt(_positionId, spell, params);
+    vm.stopPrank();
+
+    // debt should be reduced
+    require(positionDebt_before > bank.getBorrowETHValue(_positionId), 'not repay');
+
+    // user info after
+    uint userBalanceTokenA_after = balanceOf(tokenA, alice);
+    uint userBalanceTokenB_after = balanceOf(tokenB, alice);
+    uint userBalanceLP_after = balanceOf(lp, alice);
+    uint userBalanceReward_after = balanceOf(rewardToken, alice);
+    // receive reward from burning wrapper
+    require(
+      userBalanceReward_after > userBalanceReward_before,
+      'incorrect user balance of reward token'
+    );
+    // user shouldn't receive any tokens back
+    require(
+      userBalanceTokenA_after == userBalanceTokenA_before,
+      'incorrect user balance of tokenA'
+    );
+    require(
+      userBalanceTokenB_after == userBalanceTokenB_before,
+      'incorrect user balance of tokenB'
+    );
+    require(userBalanceLP_after == userBalanceLP_before, 'incorrect user balance of LP');
   }
 
   function testHarvestRewards(uint _positionId) internal {

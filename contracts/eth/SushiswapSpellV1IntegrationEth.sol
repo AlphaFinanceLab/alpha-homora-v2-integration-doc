@@ -51,6 +51,14 @@ contract SushiswapSpellV1IntegrationEth is BaseIntegration {
     uint amtBMin; // Desired tokenB amount (slippage control)
   }
 
+  struct repayDebtParams {
+    address tokenA; // The first token of pool
+    address tokenB; // The second token of pool
+    bool isRepayTokenA; // true if the repay token is tokenA, false if repay tokenB
+    uint amtLPTake; // Take out LP token amount (from Homora)
+    uint amtRepayMin; // minimum repay amount
+  }
+
   constructor(IBankETH _bank, ISushiswapFactory _factory) {
     bank = _bank;
     factory = _factory;
@@ -169,6 +177,28 @@ contract SushiswapSpellV1IntegrationEth is BaseIntegration {
     doRefund(_params.tokenB);
     doRefund(rewardToken);
     doRefund(lp);
+  }
+
+  function repayPositionDebt(
+    uint _positionId,
+    ISushiswapSpellV1 _spell,
+    repayDebtParams memory _params
+  ) external {
+    address lp = factory.getPair(_params.tokenA, _params.tokenB);
+    address rewardToken = getRewardToken(_positionId);
+
+    bytes memory executeData = abi.encodeWithSelector(
+      _spell.WithdrawRepayAllAmountsWMasterChef.selector,
+      _params.tokenA,
+      _params.tokenB,
+      ISushiswapSpellV1.WithdrawRepayAllAmounts(
+        _params.isRepayTokenA,
+        _params.amtLPTake,
+        _params.amtRepayMin
+      )
+    );
+    bank.execute(_positionId, address(_spell), executeData);
+    doRefund(rewardToken);
   }
 
   function harvestRewards(uint _positionId, ISushiswapSpellV1 _spell) external {
