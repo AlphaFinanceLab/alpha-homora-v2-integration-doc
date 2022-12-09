@@ -23,6 +23,12 @@ interface ISushiswapSpellV1 {
     uint amtBMin; // Desired tokenB amount
   }
 
+  struct WithdrawRepayAllAmounts {
+    bool isRepayTokenA; // true if the repay token is tokenA, false if repay tokenB
+    uint amtLPTake; // Take out LP token amount (from Homora)
+    uint amtRepayMin; // minimum repay amount
+  }
+
   /// @dev Add liquidity to sushiswap pool, with staking to masterchef
   /// @param tokenA Token A for the pair
   /// @param tokenB Token B for the pair
@@ -42,6 +48,16 @@ interface ISushiswapSpellV1 {
     address tokenA,
     address tokenB,
     RepayAmounts calldata amt
+  ) external;
+
+  // @dev Remove liquidity from sushiswap pool, from masterchef staking (only for repay debt)
+  /// @param tokenA Token A for the pair
+  /// @param tokenB Token B for the pair
+  /// @param amt Amounts of tokens to take out, token to repay, and min to repay.
+  function WithdrawRepayAllAmountsWMasterChef(
+    address tokenA,
+    address tokenB,
+    WithdrawRepayAllAmounts calldata amt
   ) external;
 
   function harvestWMasterChef() external;
